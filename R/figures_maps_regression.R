@@ -19,7 +19,8 @@ library(gvlma)
 library(corrplot)
 library(PerformanceAnalytics)
 
-outpath <- "/Volumes/dongmeic/beetle/output/fire_suppression/"
+# outpath <- "/Volumes/dongmeic/beetle/output/fire_suppression/"
+outpath <- "/Users/dongmeichen/Documents/writing/fire suppression/output/"
 # fire, suppression, MPB (Figure 1)
 fire.mpb <- read.csv("/Volumes/dongmeic/beetle/data/text/fire_mpb.csv")
 fire.mpb <- subset(fire.mpb, Year >= 1997)
@@ -37,14 +38,16 @@ dev.off()
 ####################################### fire-insect co-occurrence ##################################################################################################################
 
 # fire-insect co-occurrence (Figure 2)
-na10km_projstr <- "+proj=laea +lon_0=-100 +lat_0=50 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-na10km_crs <- CRS(na10km_projstr)
-ncfolder <- "/Volumes/dongmeic/beetle/data/raster/wus10km_v1/"
-ncfile <- "wus10km_v1_short_01.nc"
+mpb10km_projstr <- "+proj=laea +lon_0=-112.5 +lat_0=45 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+mpb10km_crs <- CRS(mpb10km_projstr)
+# ncfolder <- "/Volumes/dongmeic/beetle/data/raster/wus10km_v1/"
+# ncfile <- "wus10km_v1_short_01.nc"
+ncfolder <- "/Users/dongmeichen/Documents/beetle/ncfiles/"
+ncfile <- "mpb10km.nc"
 na10km_projstr <- "+proj=laea +lon_0=-100 +lat_0=50 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
 na10km_crs <- CRS(na10km_projstr)
 btlfir_prs_r <- brick(paste(ncfolder, ncfile, sep=""), varname="btlfir_prs", crs = na10km_crs, lvar=4)
-wus_state_lines <- readShapeLines("/Volumes/dongmeic/beetle/data/vector/wus10km_v1/wus10km_us_state.shp", proj4string = na10km_crs)
+wus_state_lines <- readShapeLines("/Users/dongmeichen/Documents/beetle/shp/mpb10km_us_line.shp", proj4string = mpb10km_crs)
 
 ## test: multiple maps
 # myColors <- c('white', 'blue', 'green', 'red')
@@ -55,23 +58,30 @@ wus_state_lines <- readShapeLines("/Volumes/dongmeic/beetle/data/vector/wus10km_
 
 add.northarrow <- function(){
   #GISTools::north.arrow(xb=-680000, yb=-2260000, len=40000)
-  GISTools::north.arrow(xb=-1380000, yb=-2300000, len=40000)
+  #GISTools::north.arrow(xb=-1380000, yb=-2300000, len=40000)
+  GISTools::north.arrow(xb= -500000, yb=-1680000,lab='N',len=40000)
 }
 add.scale <- function(){
   #GISTools::map.scale(-680000, -2460000, 400000,"100km",2,2,sfcol='brown')
-  GISTools::map.scale(-880000, -2260000, 400000,"100km",2,2,sfcol='brown')
+  #GISTools::map.scale(-880000, -2260000, 400000,"100km",2,2,sfcol='brown')
+  GISTools::map.scale(-90000, -1580000, 400000,"100km",2,2,sfcol='brown')
 } 
 years <- 1997:2013
-#outpath <- "/Users/dongmeichen/Documents/beetle/"
+outpath <- "/Users/dongmeichen/Documents/APCG/out/"
 myPath <- paste(outpath,"fire_beetle_overlay.png", sep="")
-arg <- list(at=c(0,1,2,3), labels=c("Fire-beetle free", "Beetle only", "Co-occurrence", "Fire only"))
+myColors <- c('white', '#7570b3', '#1b9e77', '#d95f02')
+arg <- list(at=c(0,1,2,3), labels=c("Fire-beetle free", "Beetle only", "Synchrony", "Fire only"))
 png(myPath, width = 9, height = 5, units = "in", res=300)
-par(mfrow=c(1,2),xpd=TRUE,mar=c(0,0,2,0))
-plot(subset(btlfir_prs_r, 1), col=c("white","blue","green","red"), main="Beetle-fire co-occurrence (1997)", xaxt = "n", yaxt = "n", bty="n", box=FALSE, legend=FALSE)
-plot(subset(btlfir_prs_r, 1), col=c("white","blue","green","red"), axis.args=arg, legend.only=TRUE, legend.width=0.7, legend.shrink=0.8, legend.args=list(text="", side=3, font=2, line=2,cex=1), smallplot=c(.2,.25,.08,.2)); par(mar = par("mar"))
+par(mfrow=c(1,2),xpd=TRUE,mar=c(0,0,1,0))
+plot(wus_state_lines, lwd=0.8)
+plot(subset(btlfir_prs_r, 1), col=myColors, add=TRUE, xaxt = "n", yaxt = "n", bty="n", box=FALSE, legend=FALSE)
+plot(subset(btlfir_prs_r, 1), col=myColors, add=TRUE, axis.args=arg, legend.only=TRUE, legend.width=0.7, legend.shrink=0.8, legend.args=list(text="", side=3, font=2, line=2,cex=1), smallplot=c(.2,.25,.03,.15)); par(mar = par("mar"))
 plot(wus_state_lines, lwd=0.8, col='dimgray', add=TRUE)
-plot(subset(btlfir_prs_r, 13), col=c("white","blue","green","red"), main="Beetle-fire co-occurrence (2009)", xaxt = "n", yaxt = "n", bty="n", box=FALSE, legend=FALSE)
+title(line=-1, main="Fire-beetle synchrony (1997)", cex.main=1.2)
+plot(wus_state_lines, lwd=0.8)
+plot(subset(btlfir_prs_r, 13), col=myColors, add=TRUE, xaxt = "n", yaxt = "n", bty="n", box=FALSE, legend=FALSE)
 plot(wus_state_lines, lwd=0.8, col='dimgray', add=TRUE)
+title(line=-1, main="Fire-beetle synchrony (2009)", cex.main=1.2)
 # par(mfrow=c(1,1),xpd=TRUE,mar=c(0,0,0,0))
 # plot(subset(btlfir_prs_r, 1), col=c("white", "blue","green","red"), xaxt = "n", yaxt = "n", bty="n", box=FALSE, legend=FALSE)
 # alp <- seq(.98, 0.28, by=-0.045)
@@ -87,36 +97,37 @@ add.scale()
 dev.off()
 
 ####################################### maps of jurisdictional boundaries ##################################################################################################################
+# maps of jurisdictional boundaries (figure 3)
 lonlat <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 crs <- CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-west.usa.shp <- readShapePoly("/Volumes/dongmeic/beetle/data/vector/western_us.shp")
+#path <- "/Volumes/dongmeic/beetle/data/vector"
+path <- "/Users/dongmeichen/Documents/writing/fire suppression/data/"
+west.usa.shp <- readOGR(dsn=path, layer="western_us")
 proj4string(west.usa.shp) <- crs
 
-parks <- readShapePoly("/Volumes/dongmeic/beetle/data/vector/jurisditional/AdministrativeForest.shp")
-proj4string(parks) <- lonlat 
+parks <- readOGR(dsn=path, layer="AdministrativeForest")
 parks <- spTransform(parks, crs)
-ecoregions <- readShapePoly("/Volumes/dongmeic/beetle/data/vector/ecoregions/ecosections.shp")
+ecoregions <- readOGR(dsn=path, layer="ecosections")
 proj4string(ecoregions) <- crs
-subecoregions <- readShapePoly("/Volumes/dongmeic/beetle/data/vector/ecoregions/subsections.shp")
+subecoregions <- readOGR(dsn=path, layer="subsections")
 proj4string(subecoregions) <- crs
-landown <- readShapePoly("/Volumes/dongmeic/beetle/data/vector/jurisditional/land_ownerships_wus.shp")
-proj4string(landown) <- lonlat 
+landown <- readOGR(dsn=path, layer="land_ownerships_wus")
 landown <- spTransform(landown, crs)
 
-png(paste0(outpath,"jurisd_bound.png"), width = 10, height = 12, units = "in", res = 300)
-par(mfrow=c(2,2),mar=c(2,2,2,2))
-plot(ecoregions, bord="red")
-plot(west.usa.shp, add=TRUE, bord="grey")
-title(line=0, main="Ecoregions", cex.main=2)
-plot(landown, bord="red")
-plot(west.usa.shp, add=TRUE, bord="grey")
-title(line=0, main="Land ownerships", cex.main=2)
+png(paste0(outpath,"jurisd_bound.png"), width = 12, height = 4, units = "in", res = 300)
+par(mfrow=c(1,4),mar=c(1,1,2,1))
 plot(parks, bord="red")
 plot(west.usa.shp, add=TRUE, bord="grey")
 title(line=0, main="National forests", cex.main=2)
+plot(ecoregions, bord="red")
+plot(west.usa.shp, add=TRUE, bord="grey")
+title(line=0, main="Ecoregions", cex.main=2)
 plot(subecoregions, bord="red")
 plot(west.usa.shp, add=TRUE, bord="grey")
 title(line=0, main="Sub-ecoregions", cex.main=2)
+plot(landown, bord="red")
+plot(west.usa.shp, add=TRUE, bord="grey")
+title(line=0, main="Land ownerships", cex.main=2)
 dev.off()
 
 ######################################## maps of fire suppression and beetle outbreaks on jurisdictional levels ########################################################################################################################
@@ -293,7 +304,7 @@ dev.off()
 
 ########################################### maps of fire suppression and beetle outbreaks in raster #########################################################################################################################################################
 
-# Maps in a raster plot (Figure 4) # WGS84
+# Maps in a raster plot (Figure 5) # WGS84
 host.shp <- readOGR(dsn = "/Volumes/dongmeic/beetle/data/vector/vegetation", layer="MPB_host_proj_westUS_clip_Disall")
 pts <- over(fires, as(west.usa.shp,"SpatialPolygons"))
 #pts <- over(fires, as(host.shp,"SpatialPolygons"))
