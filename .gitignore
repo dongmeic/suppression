@@ -2,6 +2,8 @@
 .DS_Store
 *~
 
+# R
+.Rhistory
 
 # Directories
 data/
