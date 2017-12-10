@@ -1,2 +1,7 @@
+# OS Files
 .DS_Store
 *~
+
+
+# Directories
+data/
