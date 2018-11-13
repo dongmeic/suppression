@@ -1,2 +1,0 @@
-## by Dongmei CHEN
-## objectives: 
