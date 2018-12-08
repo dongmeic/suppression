@@ -97,46 +97,59 @@ icsdata.n1$LogCost <- log(icsdata.n1$Costs)
 icsdata.n1$LogAcre <- log(icsdata.n1$Acre)
 #write.csv(icsdata.n1, paste0(fire.path,"ics-209-costs-aggregate.csv")) # this table is used to join table in ArcGIS
 colnames(icsdata.n)[1] <- "ICS_209_INCIDENT_NUMBER"
-# remove zeros in coordinates
-icsdata.n.1 <- with(icsdata.n, icsdata.n[!(Longitude == 0), ])
-icsdata.n.2 <- with(icsdata.n.1, icsdata.n.1[!(Latitude == 0), ])
-icsdata.n.3 <- icsdata.n.2[!is.na(icsdata.n.2$Longitude) & !is.na(icsdata.n.2$Latitude),]
-icsdata.n.3$Longitude <- as.numeric(icsdata.n.3$Longitude)
-icsdata.n.3$Latitude <- as.numeric(icsdata.n.3$Latitude)
-# length(icsdata.n.3$ICS_209_INCIDENT_NUMBER)
-# [1] 23112
-# save points in contiguous US
-icsdata.n.3 <- icsdata.n.3[icsdata.n.3$Longitude > -125 & icsdata.n.3$Longitude < -66 
-                           & icsdata.n.3$Latitude > 24 & icsdata.n.3$Latitude < 50, ] 
-# length(icsdata.n.3$ICS_209_INCIDENT_NUMBER)
-# [1] 22548
-xy <- data.frame(icsdata.n.3[,c(2,3)])
-coordinates(xy) <- c("Longitude", "Latitude")
-proj4string(xy) <- lonlat
-xy.n <- spTransform(xy, crs)
-sit.spdf <- SpatialPointsDataFrame(coords = xy.n, data = icsdata.n.3, proj4string = crs)
-sit.westus <- gIntersection(sit.spdf, mpb10km)
-png(paste0(outpath,"figures/sit_209_westUS.png"), width = 10, height = 8, units = "in", res=300)
-par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,0))
-plot(mpb10km, main="SIT-209 fire records in the western US")
-points(sit.westus$x, sit.westus$y, pch=16, col="red", cex=0.2)
-dev.off()
-sit_westus <- sit.spdf[!is.na(over(sit.spdf, as(mpb10km, "SpatialPolygons"))),]
-writeOGR(sit_westus, dsn = paste0(outpath,"spdf"), layer = "sit_westus", driver = "ESRI Shapefile", overwrite_layer = TRUE)
 
 # MTBS
-mtbs.shp <- readOGR(dsn=paste0(inpath, "mtbs_perimeter_data"), layer="mtbs_perims_1984-2015_DD_20170815") # this takes some time
-mtbs.pts <- readOGR(dsn=paste0(inpath, "mtbs_fod_pts_data"), layer="mtbs_fod_pts_20170501")
-mtbs.shp <- spTransform(mtbs.shp, crs)
-mtbs.pts <- spTransform(mtbs.pts, crs)
-mtbs.df <- as.data.frame(mtbs.pts)
-print(names(mtbs.df)); colnames(mtbs.df)[1] <- "MTBS_ID" # for data merge
+mtbs.shp <- readOGR(dsn=paste0(fire.path, "mtbs_perimeter_data"), layer="mtbs_perims_DD")
+#mtbs.shp <- spTransform(mtbs.shp, crs)
+mtbs.df <- as.data.frame(mtbs.shp)
+colnames(mtbs.df)[1] <- "MTBS_ID"
 head(mtbs.df)
-mpb10km <- gBuffer(mpb10km, byid=TRUE, width=0)
-mtbs.shp <- gSimplify(mtbs.shp, tol = 0.00001)
-mtbs.shp <- gBuffer(mtbs.shp, byid=TRUE, width=0)
-ptm <- proc.time()
-mtbs.westus <- gIntersection(mtbs.shp, byid=TRUE, mpb10km) # this takes a while
-proc.time() - ptm # 552.123s
-mtbs.pts.westus <- mtbs.pts[!is.na(over(mtbs.pts, as(mpb10km, "SpatialPolygons"))),]
-writeOGR(mtbs.pts.westus, dsn = paste0(outpath,"spdf"), layer = "mtbs_pts_westus", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+
+# merge: make sure match one by one
+length(fpafod$ICS_209_INCIDENT_NUMBER);length(unique(fpafod$ICS_209_INCIDENT_NUMBER))
+# [1] 1880465
+# [1] 22738
+length(fpafod$MTBS_ID);length(unique(fpafod$MTBS_ID))
+# [1] 1880465
+# [1] 10482
+length(icsdata.n$ICS_209_INCIDENT_NUMBER);length(unique(icsdata.n$ICS_209_INCIDENT_NUMBER))
+# [1] 23691
+# [1] 23691
+length(mtbs.df$MTBS_ID);length(unique(mtbs.df$MTBS_ID))
+# [1] 21673
+# [1] 21673
+
+fpafod.dt <- data.table(fpafod)
+setkey(fpafod.dt, "ICS_209_INCIDENT_NUMBER")
+fpafod.1 <- fpafod.dt[, list(MTBS_ID= first(MTBS_ID), FIRE_YEAR = first(FIRE_YEAR), LONGITUDE=first(LONGITUDE), LATITUDE=first(LATITUDE),   
+                             DISCOVERY_DATE=first(DISCOVERY_DATE), DISCOVERY_DOY = first(DISCOVERY_DOY), 
+                             CONT_DATE=last(CONT_DATE), CONT_DOY=last(CONT_DOY), FIRE_SIZE=mean(FIRE_SIZE)), by=key(fpafod.dt)]
+length(fpafod.1$ICS_209_INCIDENT_NUMBER);length(unique(fpafod.1$ICS_209_INCIDENT_NUMBER))
+#[1] 22738
+#[1] 22738
+
+fpa.sit.df <- merge(fpafod.1, icsdata.n, by= "ICS_209_INCIDENT_NUMBER", all=TRUE)
+# clean up duration dates
+fpa.sit.df$Duration1 <- as.numeric(difftime(as.Date(fpa.sit.df$CONT_DATE), as.Date(fpa.sit.df$DISCOVERY_DATE),units = "days"))
+fpa.sit.df$Duration2 <- fpa.sit.df$CONT_DOY - fpa.sit.df$DISCOVERY_DOY
+fpa.sit.df$Duration3 <- as.numeric(difftime(as.Date(fpa.sit.df$EndDate), as.Date(fpa.sit.df$StartDate),units = "days"))
+fpa.sit.df$Duration <- ifelse(fpa.sit.df$Duration1 > 200 | fpa.sit.df$Duration1 < 0, abs(fpa.sit.df$Duration2), fpa.sit.df$Duration1)
+fpa.sit.df$Duration <- ifelse(fpa.sit.df$Duration1 == 0 & fpa.sit.df$Duration2 == 0 & fpa.sit.df$Duration3 > 0 & fpa.sit.df$Duration3 < 200, fpa.sit.df$Duration3, fpa.sit.df$Duration)
+# get a table to join in ArcGIS
+fpa.sit.tb <- fpa.sit.df[!is.na(ICS_209_INCIDENT_NUMBER) & !is.na(MTBS_ID),]
+setkey(fpa.sit.tb, "MTBS_ID")
+length(fpa.sit.tb$MTBS_ID);length(unique(fpa.sit.tb$MTBS_ID))
+#[1] 6633
+#[1] 6490
+
+fpa.sit.tb.1 <- fpa.sit.tb[, list(ICS_209_INCIDENT_NUMBER = first(ICS_209_INCIDENT_NUMBER), FIRE_YEAR = first(FIRE_YEAR), 
+                                  LONGITUDE=first(LONGITUDE), LATITUDE=first(LATITUDE),   
+                                  DISCOVERY_DATE=first(DISCOVERY_DATE), DISCOVERY_DOY = first(DISCOVERY_DOY), 
+                                  CONT_DATE=last(CONT_DATE), CONT_DOY=last(CONT_DOY), FIRE_SIZE=mean(FIRE_SIZE), 
+                                  Longitude = first(Longitude), Latitude = first(Latitude), Year=first(Year), State=first(State), 
+                                  Costs = first(Costs), Acres = first(Acres), Duration = first(Duration)), by=key(fpa.sit.tb)]
+length(fpa.sit.tb.1$MTBS_ID);length(unique(fpa.sit.tb.1$MTBS_ID))
+#[1] 6490
+#[1] 6490
+
+
