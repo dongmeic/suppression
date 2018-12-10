@@ -125,6 +125,7 @@ plot(mpb10km, main="SIT-209 fire records in the western US")
 points(sit.westus$x, sit.westus$y, pch=16, col="red", cex=0.2)
 dev.off()
 sit_westus <- sit.spdf[!is.na(over(sit.spdf, as(mpb10km, "SpatialPolygons"))),]
+writeOGR(sit.spdf, dsn = fire.path, layer = "sit_209", driver = "ESRI Shapefile", overwrite_layer = TRUE)
 writeOGR(sit_westus, dsn = fire.path, layer = "sit_westus", driver = "ESRI Shapefile", overwrite_layer = TRUE)
 length(na.omit(sit_westus@data$Costs)); length(na.omit(sit_westus@data$Acres))
 #[1] 6757

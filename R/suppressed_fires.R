@@ -9,11 +9,12 @@ mpb10km.pts <- readOGR(dsn = mpb10km.path, layer = "mpb10km_us_gridpts")
 par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,0))
 plot(mpb10km.pts, pch=16, col=alpha("red", alpha = 0.3), cex=0.2)
 mpb10km.pts.r <- raster("/gpfs/projects/gavingrp/dongmeic/beetle/raster/mpb10km_grid.nc", varname = "etopo1")
+projection(mpb10km.pts.r) <- crs
 
 crs <- proj4string(mpb10km)
 
 get.raster <- function(shp, var, fun){
-	cell.size=10000
+	cell.size=100000
 	xmin <- -1006739; xmax <- 1050000.0; ymin <- -1722656; ymax <- 539131.6
 	ncols <- (xmax - xmin)/cell.size; nrows <- (ymax - ymin)/cell.size
 	r <- raster(nrows=nrows, ncols=ncols, ext=extent(mpb10km),crs = crs)
@@ -21,9 +22,12 @@ get.raster <- function(shp, var, fun){
 }
 
 rasterized <- function(shp, var, fun){
-	r <- rasterize(shp, mpb10km.pts.r, var, fun=fun, na.rm=TRUE) 
-	projection(r) <- crs
-	r
+	rasterize(shp, mpb10km.pts.r, var, fun=fun, na.rm=TRUE) 
+}
+
+median.fire.size <- function(x, na.rm=TRUE){
+	x[which(x>24710)] <- 24710
+  median(x)
 }
 
 fire.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/firedata/"
@@ -38,7 +42,7 @@ fpafod <- spTransform(fpafod, crs)
 fwfod.n <- fwfod[!is.na(fwfod$CAUSE) & fwfod$CAUSE == "Natural",]
 # select suppressed fires
 fwfod.n.s <- fwfod.n[!is.na(fwfod.n$FIRETYPE) & fwfod.n$FIRETYPE == "1",]
-
+sit209 <- readOGR(dsn=fire.path, layer="sit_westus", stringsAsFactors = FALSE)
 png(paste0(out,"fpafod_fwfod.png"), width = 10, height = 8, units = "in", res=300)
 par(mfrow=c(1,2),xpd=FALSE,mar=c(0,0,2,0))
 plot(mpb10km, border="black", main="FW-FOD fire records in the western US")
@@ -59,23 +63,35 @@ fwfod.n$Natural <- rep(1, length(fwfod.n$CAUSE))
 fire.sprs <- rasterized(fwfod.n.s, "FIRETYPE", sum)
 fire.natr <- rasterized(fwfod.n, "Natural", sum)
 pct.sprs <- fire.sprs/fire.natr
+firesize <- rasterized(fpafod, "FIRE_SIZE", median.fire.size)
+costs <- rasterized(sit209, "Costs", median)
+acres <- rasterized(sit209, "Acres", median)
+CostPerAcre <- costs/acres
+par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
+plot(CostPerAcre, col = brewer.pal(ncls,cols))
+
 
 mapping <- function(outnm, r, title, cols){
 	png(paste0(out, outnm, ".png"), width = 8, height = 8, units = "in", res=300)
-	par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,5))
+	par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,6))
 	plot(mpb10km,main=title,bord="white")
 	ncls <- 5
-	v <-r@data@values
+	v <-getValues(r)
 	if(min(na.omit(v))%%1==0){
 		d <- 0
 	}else{
-	  d <- 2
+	  d <- 1
 	}
 	clIn <- classIntervals(v, n = ncls, style = "kmeans")
-	plot(r, breaks=round(clIn$brks, digits=d), col = brewer.pal(ncls,cols), axes=FALSE, box=FALSE, add=T)
+	plot(r, breaks=round(clIn$brks, digits=d), col = brewer.pal(ncls,cols), legend=FALSE, axes=FALSE, box=FALSE, add=T)
+	plot(r, breaks=round(clIn$brks, digits=d), legend.only=TRUE, col=brewer.pal(ncls,cols), legend.width=1, legend.shrink=0.75,
+    smallplot=c(0.83,.85,.1,.9))
 	plot(mpb10km, bord=alpha("black", alpha = 0.6), lwd=0.5, add=T)
 	dev.off()
 }
 
 mapping("pct_sprs", pct.sprs, "Percent of naturally-caused fires suppressed", "Reds")
 mapping("fire_sprs", fire.sprs, "Number of naturally-caused fires suppressed", "Reds")
+mapping("firesize", firesize, "Median fire size", "Reds")
+mapping("elevation", mpb10km.pts.r, "Elevation", "Greys")
+mapping("costs", costs, "Fire containment costs", "Reds")
