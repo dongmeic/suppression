@@ -1,17 +1,23 @@
 library(rgdal)
 library(raster)
 library(RColorBrewer)
+library(Scale)
+library(classInt)
+library(DescTools)
 
+source("/gpfs/projects/gavingrp/dongmeic/suppression/R/gini.R")
 # region of interest
 mpb10km.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km"
 mpb10km <- readOGR(dsn = mpb10km.path, layer = "mpb10km")
+crs <- proj4string(mpb10km)
 mpb10km.pts <- readOGR(dsn = mpb10km.path, layer = "mpb10km_us_gridpts")
 par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,0))
 plot(mpb10km.pts, pch=16, col=alpha("red", alpha = 0.3), cex=0.2)
 mpb10km.pts.r <- raster("/gpfs/projects/gavingrp/dongmeic/beetle/raster/mpb10km_grid.nc", varname = "etopo1")
 projection(mpb10km.pts.r) <- crs
 
-crs <- proj4string(mpb10km)
+mpb.pts <- readOGR(dsn="/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb", layer="MPB_points")
+mpb.pts <- spTransform(mpb.pts, crs)
 
 get.raster <- function(shp, var, fun){
 	cell.size=100000
@@ -23,11 +29,6 @@ get.raster <- function(shp, var, fun){
 
 rasterized <- function(shp, var, fun){
 	rasterize(shp, mpb10km.pts.r, var, fun=fun, na.rm=TRUE) 
-}
-
-median.fire.size <- function(x, na.rm=TRUE){
-	x[which(x>24710)] <- 24710
-  median(x)
 }
 
 fire.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/firedata/"
@@ -63,26 +64,28 @@ fwfod.n$Natural <- rep(1, length(fwfod.n$CAUSE))
 fire.sprs <- rasterized(fwfod.n.s, "FIRETYPE", sum)
 fire.natr <- rasterized(fwfod.n, "Natural", sum)
 pct.sprs <- fire.sprs/fire.natr
-firesize <- rasterized(fpafod, "FIRE_SIZE", median.fire.size)
+fpafod$logFS <- log(fpafod$FIRE_SIZE+1)
+firesize <- rasterized(fpafod, "logFS", median)
+firefreq <- rasterized(fpafod, "FIRE_SIZE", count)
+gini.fs <- rasterized(fpafod, "FIRE_SIZE", gini)
+gini.cost <- rasterized(sit209, "Costs", gini)
+sit209 <- sit209[!is.na(sit209$Costs) & sit209$Costs >0,]
+sit209$LogCost <- log(sit209$Costs)
+logCost <- rasterized(sit209, "LogCost", median)
 costs <- rasterized(sit209, "Costs", median)
 acres <- rasterized(sit209, "Acres", median)
 CostPerAcre <- costs/acres
 par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
 plot(CostPerAcre, col = brewer.pal(ncls,cols))
+mpb.acre <- rasterized(mpb.pts, "ACRES", sum.log)
 
-
-mapping <- function(outnm, r, title, cols){
+mapping <- function(outnm, r, title, d, cols, sty){
 	png(paste0(out, outnm, ".png"), width = 8, height = 8, units = "in", res=300)
 	par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,6))
 	plot(mpb10km,main=title,bord="white")
 	ncls <- 5
 	v <-getValues(r)
-	if(min(na.omit(v))%%1==0){
-		d <- 0
-	}else{
-	  d <- 1
-	}
-	clIn <- classIntervals(v, n = ncls, style = "kmeans")
+	clIn <- classIntervals(v, n = ncls, style = sty)
 	plot(r, breaks=round(clIn$brks, digits=d), col = brewer.pal(ncls,cols), legend=FALSE, axes=FALSE, box=FALSE, add=T)
 	plot(r, breaks=round(clIn$brks, digits=d), legend.only=TRUE, col=brewer.pal(ncls,cols), legend.width=1, legend.shrink=0.75,
     smallplot=c(0.83,.85,.1,.9))
@@ -90,8 +93,12 @@ mapping <- function(outnm, r, title, cols){
 	dev.off()
 }
 
-mapping("pct_sprs", pct.sprs, "Percent of naturally-caused fires suppressed", "Reds")
-mapping("fire_sprs", fire.sprs, "Number of naturally-caused fires suppressed", "Reds")
-mapping("firesize", firesize, "Median fire size", "Reds")
-mapping("elevation", mpb10km.pts.r, "Elevation", "Greys")
-mapping("costs", costs, "Fire containment costs", "Reds")
+mapping("pct_sprs", pct.sprs, "Percent of naturally-caused fires suppressed", d=1, "Reds", "kmeans")
+mapping("fire_sprs", fire.sprs, "Number of naturally-caused fires suppressed", d=0,"Reds", "kmeans")
+mapping("firesize", firesize, "Median fire size (log)", d=0, "YlOrBr", "pretty")
+mapping("firefreq", firefreq, "Number of fires(log)", d=0, "YlOrBr", "pretty")
+mapping("elevation", mpb10km.pts.r, "Elevation", d=0, "Greys", "kmeans")
+mapping("costs", logCost, "Fire containment cost per fire (log)", d=0,  "YlOrBr", "pretty")
+mapping("gini_index", gini.fs, "Gini index of fire size", d=1, "YlOrBr", "quantile")
+mapping("gini_index_costs", gini.cost, "Gini index of fire containment costs", d=1, "YlOrBr", "pretty")
+mapping("mpb_acre", mpb.acre, "Beetle affected acres (log)", d=0, "YlOrBr", "kmeans")
