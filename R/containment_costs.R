@@ -7,33 +7,7 @@ library(data.table)
 library(maptools)
 library(rgeos)
 
-# region of interest
-mpb10km <- readOGR(dsn = "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km", layer = "mpb10km")
-
-# WGS84
-lonlat <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-# Set the same projection with MPB data
-crs <- proj4string(mpb10km) 
-# "+proj=laea +lat_0=45 +lon_0=-112.5 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0" 
-
-# functions
-mode <- function(x) {
-  return(names(sort(-table(na.omit(x))))[1])
-}
-
-MAX <- function(x){
-	max(x, na.rm=TRUE)
-}
-
-df2spdf <- function(col1, col2, colname1, colname2, df){
-  xy <- data.frame(df[,c(col1,col2)])
-  coordinates(xy) <- c(colname1, colname2)
-  proj4string(xy) <- lonlat
-  xy.n <- spTransform(xy, crs)
-  spdf <- SpatialPointsDataFrame(coords = xy.n, data = df, proj4string = crs)
-  return(spdf)
-}
-
+source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
 fire.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/firedata/"
 out <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/maps/"
 # FPA-FOD
@@ -87,7 +61,7 @@ print(paste("SIT-209 has", length(merge$SITID), "records during", range(merge$Ye
 # "SIT-209 has 104400 records during 1999 and 2016 in raw data where percent containment is 100!"
 # write.csv(merge, paste0(fire.path,"ics-209.csv"), row.names = FALSE)
 icsdata.a <- aggregate(cbind(Longitude, Latitude, Year, State) ~ SITID, data = merge, mode)
-icsdata.b <- aggregate(cbind(Costs, Acres) ~ SITID, data = merge, MAX)
+icsdata.b <- aggregate(cbind(Costs, Acres) ~ SITID, data = merge, max, na.action = na.omit)
 icsdata.c <- aggregate(StartDate ~ SITID, data=merge, function(x) min(as.Date(x, format = "%m/%d/%Y")))
 icsdata.d <- aggregate(EndDate ~ SITID, data=merge, function(x) max(as.Date(x, format = "%m/%d/%Y")))
 icsdata.1 <- merge(icsdata.a, icsdata.b, by = "SITID", all=TRUE)

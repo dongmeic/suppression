@@ -5,31 +5,13 @@ library(Scale)
 library(classInt)
 library(DescTools)
 
-source("/gpfs/projects/gavingrp/dongmeic/suppression/R/gini.R")
-# region of interest
-mpb10km.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km"
-mpb10km <- readOGR(dsn = mpb10km.path, layer = "mpb10km")
-crs <- proj4string(mpb10km)
+source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
 mpb10km.pts <- readOGR(dsn = mpb10km.path, layer = "mpb10km_us_gridpts")
 par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,0))
 plot(mpb10km.pts, pch=16, col=alpha("red", alpha = 0.3), cex=0.2)
-mpb10km.pts.r <- raster("/gpfs/projects/gavingrp/dongmeic/beetle/raster/mpb10km_grid.nc", varname = "etopo1")
-projection(mpb10km.pts.r) <- crs
 
 mpb.pts <- readOGR(dsn="/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb", layer="MPB_points")
 mpb.pts <- spTransform(mpb.pts, crs)
-
-get.raster <- function(shp, var, fun){
-	cell.size=100000
-	xmin <- -1006739; xmax <- 1050000.0; ymin <- -1722656; ymax <- 539131.6
-	ncols <- (xmax - xmin)/cell.size; nrows <- (ymax - ymin)/cell.size
-	r <- raster(nrows=nrows, ncols=ncols, ext=extent(mpb10km),crs = crs)
-	rasterize(shp, r, var, fun=fun, na.rm=TRUE) 
-}
-
-rasterized <- function(shp, var, fun){
-	rasterize(shp, mpb10km.pts.r, var, fun=fun, na.rm=TRUE) 
-}
 
 fire.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/firedata/"
 out <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/maps/"
@@ -78,20 +60,6 @@ CostPerAcre <- costs/acres
 par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
 plot(CostPerAcre, col = brewer.pal(ncls,cols))
 mpb.acre <- rasterized(mpb.pts, "ACRES", sum.log)
-
-mapping <- function(outnm, r, title, d, cols, sty){
-	png(paste0(out, outnm, ".png"), width = 8, height = 8, units = "in", res=300)
-	par(mfrow=c(1,1),xpd=FALSE,mar=c(0,0,2,6))
-	plot(mpb10km,main=title,bord="white")
-	ncls <- 5
-	v <-getValues(r)
-	clIn <- classIntervals(v, n = ncls, style = sty)
-	plot(r, breaks=round(clIn$brks, digits=d), col = brewer.pal(ncls,cols), legend=FALSE, axes=FALSE, box=FALSE, add=T)
-	plot(r, breaks=round(clIn$brks, digits=d), legend.only=TRUE, col=brewer.pal(ncls,cols), legend.width=1, legend.shrink=0.75,
-    smallplot=c(0.83,.85,.1,.9))
-	plot(mpb10km, bord=alpha("black", alpha = 0.6), lwd=0.5, add=T)
-	dev.off()
-}
 
 mapping("pct_sprs", pct.sprs, "Percent of naturally-caused fires suppressed", d=1, "Reds", "kmeans")
 mapping("fire_sprs", fire.sprs, "Number of naturally-caused fires suppressed", d=0,"Reds", "kmeans")
