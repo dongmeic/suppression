@@ -1,8 +1,5 @@
 library(rgdal)
 library(raster)
-library(RColorBrewer)
-library(Scale)
-library(classInt)
 library(DescTools)
 
 source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
