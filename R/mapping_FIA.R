@@ -1,0 +1,31 @@
+library(rgdal)
+
+source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
+plot.table <- read.csv("/gpfs/projects/gavingrp/dongmeic/beetle/csvfiles/FIA.csv")
+names(plot.table)
+colnames(plot.table)[9:12] <- c("SLOPE_MIN","SLOPE_MAX","ASPECT_MIN","ASPECT_MAX")
+plot.table <- plot.table[!is.na(plot.table$LON) & !is.na(plot.table$LAT),]
+plot.spdf <- df2spdf(7,6,"LON", "LAT",plot.table)
+shp.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/FIA"
+#writeOGR(obj=plot.spdf, dsn = shp.path, layer = "FIA", driver = "ESRI Shapefile", overwrite_layer = TRUE)
+
+FIA <- readOGR(dsn=shp.path, layer = "FIA", stringsAsFactors = FALSE)
+stand_age <- readOGR(dsn = mpb10km.path, layer = "stand_age")
+tree_density <- readOGR(dsn = mpb10km.path, layer = "tree_density")
+stand_age$RASTERVALU[stand_age$RASTERVALU==-9999] <- NA
+stand_age_r <- rasterize(stand_age, mpb10km.pts.r, "RASTERVALU", max, na.rm=FALSE)
+tree_density$RASTERVALU[tree_density$RASTERVALU==-9999] <- NA
+tree_density_r <- rasterize(tree_density, mpb10km.pts.r, "RASTERVALU", max, na.rm=FALSE)
+elev_r <- rasterized(FIA, "ELEV", mean)
+STDAGE <- rasterized(FIA, "STDAGE", median)
+NBR_LIV <- rasterized(FIA.NBR_LIV, "NBR_LIV", median)
+LIVE_CA <- rasterized(FIA, "LIVE_CA", median)
+BALIVE <- rasterized(FIA, "BALIVE", median)
+
+mapping("stand_age", stand_age_r, "Stand age", d=0, "Reds", "kmeans")
+mapping("tree_density", tree_density_r, "Tree density", d=0, "Reds", "kmeans")
+mapping("elev_FIA", elev_r, "Elevation", d=0, "Greys", "kmeans")
+mapping("STDAGE_FIA", STDAGE, "Stand age", d=0, "Reds", "kmeans")
+mapping("NBR_LIV", NBR_LIV, "Number of live stems", d=0, "Reds", "kmeans")
+mapping("LIVE_CA", LIVE_CA, "Live canopy cover percent", d=0, "Reds", "kmeans")
+mapping("BALIVE", BALIVE, "Basal area of live trees", d=0, "Reds", "kmeans")
