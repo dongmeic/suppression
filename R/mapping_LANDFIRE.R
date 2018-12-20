@@ -85,3 +85,8 @@ labels <- c("0-5%", "6-10%", "11-15%", "16-20%", "21-25%", "26-30%",
 						"96-100%", "Water", "Snow / Ice", "Barren", "Sparsely Vegetated")
 cols <- c(matlab.like(20),'#6baed6','#deebf7','#737373','#ccebc5')
 mapping.LF(pls, labels, cols, "Percent of low-severity fires", "PLS")
+
+landcover <- readOGR(dsn="/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles", layer="LandCover_mpb10km", 
+										 stringsAsFactors = FALSE)
+head(landcover)
+landcover$forest <- ifelse(1, landcover$RASTERVALU %in% c('41', '42', '43'), 0)
