@@ -1,4 +1,5 @@
 library(rasterVis)
+library(colorRamps)
 source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
 LFpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/LANDFIRE.gdb"
 vcc <- readOGR(dsn=paste0(LFpath), layer="VCC", stringsAsFactors = FALSE)
@@ -25,13 +26,16 @@ rat[["vcc"]] <- c("Very Low, Vegetation Departure 0-16%",
 levels(vcc_r) <- rat
 cols <- c(brewer.pal(7,'BuGn')[-1],'#6baed6','#deebf7','#fff7bc','#662506','#737373','#ccebc5','#fec44f','#cc4c02')
 
-p <- levelplot(vcc_r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
-					scales = list(draw = FALSE), margin=F, main="Vegetation Condition Class")
-p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
-png(paste0(out,"VCC.png"), width=8, height=6, units="in", res=300)
-par(mfrow=c(1,1), xpd=FALSE, mar=rep(0.5,4))
-print(p)
-dev.off()
+mapping.LF <- function(r, cols, title, outnm){
+	p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
+						scales = list(draw = FALSE), margin=F, main=title)
+	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+	png(paste0(out,outnm,".png"), width=8, height=6, units="in", res=300)
+	par(mfrow=c(1,1), xpd=FALSE, mar=rep(0.5,4))
+	print(p)
+	dev.off()
+}
+mapping.LF(vcc_r, cols, "Vegetation condition class", "VCC")
 
 mfri <- readOGR(dsn=paste0(LFpath), layer="MFRI", stringsAsFactors = FALSE)
 head(mfri)
@@ -68,7 +72,8 @@ rat[["mfri"]] <- c("0-5 Years",
 									"Sparsely Vegetated",
 									"Indeterminate Fire Regime Characteristics")
 levels(mfri_r) <- rat
-cols <- c(coolwarm(22)brewer.pal(7,'BuGn')[-1],'#6baed6','#deebf7','#737373','#ccebc5','#bdbdbd')
+cols <- c(rev(matlab.like(22)),'#6baed6','#deebf7','#737373','#ccebc5','#bdbdbd')
+mapping.LF(mfri_r, cols, "Mean fire return interval", "MFRI")
 
 pms <- readOGR(dsn=paste0(LFpath), layer="PMS", stringsAsFactors = FALSE)
 prs <- readOGR(dsn=paste0(LFpath), layer="PRS", stringsAsFactors = FALSE)
