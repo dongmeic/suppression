@@ -24,6 +24,12 @@ BALIVE <- rasterized(FIA, "BALIVE", median)
 PT_LRG <- rasterized(FIA, "PT_LRG", median)
 PT_OLD <- rasterized(FIA, "PT_OLD", median)
 
+stand_age <- mean(STDAGE, stand_age_r, na.rm=TRUE)
+mpb10km.pt <- readOGR("/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km","mpb10km_us_gridpts")
+stand_age_mean <- extract(stand_age, mpb10km.pt, method='simple')
+csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
+write.csv(stand_age_mean, paste0(csvpath, "stand_age_mean.csv"), row.names=FALSE)
+mapping("stand_age_mean", stand_age, "Stand age", d=0, "Reds", "kmeans")
 mapping("stand_age", stand_age_r, "Stand age", d=0, "Reds", "kmeans")
 mapping("tree_density", tree_density_r, "Tree density", d=0, "Reds", "kmeans")
 mapping("elev_FIA", elev_r, "Elevation", d=0, "Greys", "kmeans")
