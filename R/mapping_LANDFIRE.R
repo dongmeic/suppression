@@ -100,7 +100,7 @@ mapping.LF(pls.forest, labels, cols, "Percent of low-severity fires", "PLS_fores
 landcover <- readOGR(dsn="/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles", layer="LandCover_mpb10km", 
 										 stringsAsFactors = FALSE)
 head(landcover)
-#landcover$forest <- ifelse(1, 0, landcover$RASTERVALU %in% c("41", "42", "43"))
+#landcover$forest <- ifelse(landcover$RASTERVALU %in% c("41", "42", "43"), 1, 0)
 
 vcc$forest <- landcover$forest
 mfri$forest <- landcover$forest
