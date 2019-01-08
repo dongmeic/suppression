@@ -2,6 +2,8 @@
 # LANDFIRE, GAP, wilderness 
 
 library(rgdal)
+library(dplyr)
+library(ggplot2)
 
 source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
@@ -65,8 +67,100 @@ df <- cbind(elev@data, MPBdf, Hostdf, LCdf, FIAdf, LFdf, GAPdf)
 df <- df[,-3]; df <- df[,-4]; head(df)
 write.csv(df, paste0(csvpath, "mpb10km_nonclimate.csv"), row.names=FALSE)
 
+df <- read.csv(paste0(csvpath, "mpb10km_nonclimate.csv"))
 df$allyears <- as.numeric(df$allyears)
+
+MPB.wild <- df %>%
+select(wilderness, allyears) %>%
+group_by(wilderness) %>%
+summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
 MPB.gap <- df %>%
 select(GAPs, allyears) %>%
 group_by(GAPs) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
+MPB.mfri <- df %>% 
+subset(forest==1 & mfri %in% c(1:22)) %>%
+select(mfri, allyears) %>%
+group_by(mfri) %>%
+summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
+outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
+mpb.acre.plot <- function(df, outnm, w){
+	png(paste0(outpath, "MPB_", outnm, ".png"), width=w, height=9, units="in", res=300)
+	par(mfrow=c(3,1),xpd=FALSE,mar=c(3,3,3,0))
+	barplot(df$acres, main = "Beetle affected acres", axes = F, cex.main=2)
+	axis(2, cex.axis=1.5)
+	barplot(df$grids,main = "Number of beetle-affected grid cells",  axes = F, cex.main=2)
+	axis(2, cex.axis=1.5)
+	barplot(df$average, names.arg = data.frame(df)[,outnm], main = "Beetle affected acres per grid cell", cex.names = 1.6, cex.lab=1.6, cex.axis=1.6, cex.main=2.2)
+	dev.off()
+}
+mpb.acre.plot(MPB.mfri, 'mfri', 12)
+mpb.acre.plot(MPB.gap, 'GAPs', 6)
+
+MPB.vcc <- df %>% 
+subset(forest==1 & vcc %in% c(1:6)) %>%
+select(vcc, allyears) %>%
+group_by(vcc) %>%
+summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
+mpb.acre.plot(MPB.vcc, 'vcc', 6)
+
+MPB.pls <- df %>% 
+subset(forest==1 & pls %in% c(1:20)) %>%
+select(pls, allyears) %>%
+group_by(pls) %>%
+summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
+mpb.acre.plot(MPB.pls, 'pls', 12)
+
+MPB.pms <- df %>% 
+subset(forest==1 & pms %in% c(1:20)) %>%
+select(pms, allyears) %>%
+group_by(pms) %>%
+summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
+mpb.acre.plot(MPB.pms, 'pms', 12)
+
+MPB.prs <- df %>% 
+subset(forest==1 & prs %in% c(1:20)) %>%
+select(prs, allyears) %>%
+group_by(prs) %>%
+summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+
+mpb.acre.plot(MPB.prs, 'prs', 12)
+
+pls <- data.frame(MPB.pls)
+colnames(pls)[1] <- 'group'
+pls$lf <- rep('pls', dim(pls)[1])
+pms <- data.frame(MPB.pms)
+colnames(pms)[1] <- 'group'
+pms$lf <- rep('pms', dim(pms)[1])
+prs <- data.frame(MPB.prs)
+colnames(prs)[1] <- 'group'
+prs$lf <- rep('prs', dim(prs)[1])
+
+df.lf <- rbind(pls, pms, prs)
+
+png(paste0(outpath, "MPB_LF_severity.png"), width=8, height=4, units="in", res=300)
+ggplot(data=df.lf, aes(x=group, y=average, fill=lf)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  scale_fill_brewer(name="Severity", labels=c('Low', 'Mixed', 'Replacement'), palette="YlOrRd")+
+  theme_minimal() + labs(x="Percent category of fire severity", y="Beetle affected acres by grid cell")
+dev.off()
+
+png(paste0(outpath, "MPB_LF_severity_grid.png"), width=8, height=4, units="in", res=300)
+ggplot(data=df.lf, aes(x=group, y=grids, fill=lf)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  scale_fill_brewer(name="Severity", labels=c('Low', 'Mixed', 'Replacement'), palette="YlOrRd")+
+  theme_minimal() + labs(x="Percent category of fire severity", y="Number of beetle affected grid cells")
+dev.off()
+
+png(paste0(outpath, "MPB_LF_severity_acres.png"), width=8, height=4, units="in", res=300)
+ggplot(data=df.lf, aes(x=group, y=acres, fill=lf)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  scale_fill_brewer(name="Severity", labels=c('Low', 'Mixed', 'Replacement'), palette="YlOrRd")+
+  theme_minimal() + labs(x="Percent category of fire severity", y="Total beetle affected acres")
+dev.off()

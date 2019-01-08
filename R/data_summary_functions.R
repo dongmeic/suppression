@@ -43,6 +43,14 @@ sum.log <- function(x, na.rm=TRUE){
 	log(sum(x)+1)
 }
 
+host <- function(x, na.rm=TRUE){
+	if(1 %in% x){
+		return(1)
+	}else{
+		return(0)
+	}
+}
+
 # region of interest
 library(rgdal)
 mpb10km.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km"

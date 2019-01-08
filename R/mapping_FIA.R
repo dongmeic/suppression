@@ -23,6 +23,7 @@ LIVE_CA <- rasterized(FIA, "LIVE_CA", median)
 BALIVE <- rasterized(FIA, "BALIVE", median)
 PT_LRG <- rasterized(FIA, "PT_LRG", median)
 PT_OLD <- rasterized(FIA, "PT_OLD", median)
+host_r <- rasterized(FIA, "hosts", host)
 
 stand_age <- mean(STDAGE, stand_age_r, na.rm=TRUE)
 mpb10km.pt <- readOGR("/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km","mpb10km_us_gridpts")
@@ -42,3 +43,28 @@ mapping("LIVE_CA", LIVE_CA, "Live canopy cover percent", d=0, "Reds", "kmeans")
 mapping("BALIVE", BALIVE, "Basal area of live trees", d=0, "Reds", "kmeans")
 mapping("PT_LRG", PT_LRG, "Percent of large trees", d=2, "Reds", "kmeans")
 mapping("PT_OLD", PT_OLD, "Percent of old trees", d=2, "Reds", "kmeans")
+
+labels <- c("No", "Yes")
+cols <- c("lightgrey", "darkred")
+title <- "Mountain pine beetle host presence"
+
+mapping.host <- function(shp, var, outnm){
+	r <- rasterized(shp, var, host)
+	r <- as.factor(r)
+	rat <- levels(r)[[1]]
+	rat[["labels"]] <- labels
+	levels(r) <- rat
+	p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
+						scales = list(draw = FALSE), margin=F, main=title)
+	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+	png(paste0(out,outnm,".png"), width=8, height=6, units="in", res=300)
+	par(mfrow=c(1,1), xpd=FALSE, mar=rep(0.5,4))
+	print(p)
+	dev.off()
+}
+
+mapping.host(FIA, 'hosts', 'MPB_host_FIA')
+
+cohost <- readOGR('/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km', 'mpb10km_corehost')
+mapping.host(cohost, 'FIA_hosts', 'MPB_host_FIA_mpb10km')
+mapping.host(cohost, 'vegetation', 'MPB_cohost_mpb10km')
