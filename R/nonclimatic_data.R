@@ -13,7 +13,7 @@ path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles"
 btl.shp <- readOGR(path, "mpb10km_mpb_acres", stringsAsFactors = FALSE)
 head(btl.shp@data)
 MPBdf <- btl.shp@data[,-3:-1]
-write.csv(MPBdf, paste0(csvpath, "mpb10km_mpb_acres.csv"), row.names=FALSE)
+#write.csv(MPBdf, paste0(csvpath, "mpb10km_mpb_acres.csv"), row.names=FALSE)
 
 # host presence
 host.shp <- readOGR(paste0(path, "/mpb10km"), "mpb10km_corehost", stringsAsFactors = FALSE)
@@ -56,7 +56,7 @@ LFdf <- data.frame(vcc=vcc$RASTERVALU,
 								 pls=pls$RASTERVALU)
 write.csv(LFdf, paste0(csvpath, "mpb10km_landfire.csv"), row.names=FALSE)
 
-# location
+# location (wrong)
 elev <- readOGR(paste0(path, "/mpb10km"), "mpb10km_elev", stringsAsFactors = FALSE)
 elev <- elev[elev$mask==1,]
 head(elev@data)
@@ -68,21 +68,20 @@ df <- df[,-3]; df <- df[,-4]; head(df)
 write.csv(df, paste0(csvpath, "mpb10km_nonclimate.csv"), row.names=FALSE)
 
 df <- read.csv(paste0(csvpath, "mpb10km_nonclimate.csv"))
-df$allyears <- as.numeric(df$allyears)
 
 MPB.wild <- df %>%
-select(wilderness, allyears) %>%
+dplyr::select(wilderness, allyears) %>%
 group_by(wilderness) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
 MPB.gap <- df %>%
-select(GAPs, allyears) %>%
+dplyr::select(GAPs, allyears) %>%
 group_by(GAPs) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
 MPB.mfri <- df %>% 
 subset(forest==1 & mfri %in% c(1:22)) %>%
-select(mfri, allyears) %>%
+dplyr::select(mfri, allyears) %>%
 group_by(mfri) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
@@ -102,7 +101,7 @@ mpb.acre.plot(MPB.gap, 'GAPs', 6)
 
 MPB.vcc <- df %>% 
 subset(forest==1 & vcc %in% c(1:6)) %>%
-select(vcc, allyears) %>%
+dplyr::select(vcc, allyears) %>%
 group_by(vcc) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
@@ -110,7 +109,7 @@ mpb.acre.plot(MPB.vcc, 'vcc', 6)
 
 MPB.pls <- df %>% 
 subset(forest==1 & pls %in% c(1:20)) %>%
-select(pls, allyears) %>%
+dplyr::select(pls, allyears) %>%
 group_by(pls) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
@@ -118,7 +117,7 @@ mpb.acre.plot(MPB.pls, 'pls', 12)
 
 MPB.pms <- df %>% 
 subset(forest==1 & pms %in% c(1:20)) %>%
-select(pms, allyears) %>%
+dplyr::select(pms, allyears) %>%
 group_by(pms) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
@@ -126,7 +125,7 @@ mpb.acre.plot(MPB.pms, 'pms', 12)
 
 MPB.prs <- df %>% 
 subset(forest==1 & prs %in% c(1:20)) %>%
-select(prs, allyears) %>%
+dplyr::select(prs, allyears) %>%
 group_by(prs) %>%
 summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
 
@@ -143,6 +142,7 @@ colnames(prs)[1] <- 'group'
 prs$lf <- rep('prs', dim(prs)[1])
 
 df.lf <- rbind(pls, pms, prs)
+write.csv(df.lf, paste0(csvpath, "mpb_acres_LandFire.csv"), row.names=FALSE)
 
 png(paste0(outpath, "MPB_LF_severity.png"), width=8, height=4, units="in", res=300)
 ggplot(data=df.lf, aes(x=group, y=average, fill=lf)) +
