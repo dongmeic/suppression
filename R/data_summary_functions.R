@@ -3,6 +3,7 @@ library(raster)
 library(classInt)
 library(RColorBrewer)
 library(Scale)
+library(rgdal)
 
 gini <- function(x, na.rm=TRUE){
 	l <- length(x)
@@ -52,7 +53,6 @@ host <- function(x, na.rm=TRUE){
 }
 
 # region of interest
-library(rgdal)
 mpb10km.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km"
 mpb10km <- readOGR(dsn = mpb10km.path, layer = "mpb10km")
 crs <- proj4string(mpb10km)
@@ -90,6 +90,7 @@ get.raster <- function(shp, var, fun){
 	rasterize(shp, r, var, fun=fun, na.rm=TRUE) 
 }
 
+mpb10km.pt <- readOGR("/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km","mpb10km_us_gridpts")
 mpb10km.pts.r <- raster("/gpfs/projects/gavingrp/dongmeic/beetle/raster/mpb10km_grid.nc", varname = "etopo1")
 projection(mpb10km.pts.r) <- crs
 rasterized <- function(shp, var, fun){

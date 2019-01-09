@@ -26,7 +26,6 @@ PT_OLD <- rasterized(FIA, "PT_OLD", median)
 host_r <- rasterized(FIA, "hosts", host)
 
 stand_age <- mean(STDAGE, stand_age_r, na.rm=TRUE)
-mpb10km.pt <- readOGR("/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km","mpb10km_us_gridpts")
 stand_age_mean <- extract(stand_age, mpb10km.pt, method='simple')
 pct_large <- extract(PT_LRG, mpb10km.pt, method='simple')
 pct_old <- extract(PT_OLD, mpb10km.pt, method='simple')
