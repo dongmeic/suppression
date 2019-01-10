@@ -120,3 +120,15 @@ table(pms.forest$RASTERVALU); table(pms.forest$LABEL)
 table(prs.forest$RASTERVALU); table(prs.forest$LABEL)
 table(pls.forest$RASTERVALU); table(pls.forest$LABEL)
 
+# resample landcover to get forested area
+landcover_us <- raster('/gpfs/projects/gavingrp/dongmeic/beetle/raster/nlcd_2011_landcover.tif')
+
+forested <- function(x, na.rm=TRUE){
+	if(any(x %in% c(41, 42, 43))){
+		return(1)
+	}else{
+		return(0)
+	}
+}
+
+landcover_us_10km <- aggregate(landcover_us, fact=10000/30, fun=forested)
