@@ -54,4 +54,29 @@ foreach(i=1:nyr)%dopar%{
 	write.csv(df, paste0(outpath, "mpb10km_bioclm_", years[i], ".csv"), row.names=FALSE)
 }
 
+# create mean values of all years
+extract.pt.from.b <- function(var){
+	if(var %in% monthly){
+		ncfile <- paste0("na10km_v2_",var, "_",years[1],".",years[nyr],".4d.nc")
+		b <- brick(ncfile, level=1, varname = var)
+	}else{
+		ncfile <- paste0("daily/na10km_v2_daymet_na_",var, "_",years[1],".",years[nyr],".3d.nc")
+		b <- brick(ncfile, varname = var)
+	}
+	r <- calc(b, mean)
+	proj4string(r) <- CRS(na10km.prj)
+	r <- projectRaster(r, crs=mpb10km.prj)
+	extract(r, mpb10km.pt, method='simple')
+}
+
+var <- "OctTmin"
+df <- data.frame(OctTmin=extract.pt.from.b(var))
+for(var in vars[-1]){
+	col.values <- extract.pt.from.b(var)
+	df <- cbind(df, col.values)
+	colnames(df)[dim(df)[2]] <- var
+	#print(var)
+}
+write.csv(df, paste0(outpath, "mpb10km_bioclm_mean.csv"), row.names=FALSE)
+
 print("all done!")

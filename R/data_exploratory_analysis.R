@@ -30,3 +30,7 @@ qqline(test,col="red")
 x = df.s$density # df.s$mStdAge # df.s$PctOld # df.s$PctLarge 
 cor.test(test, x)
 
+# mean values of bioclimate data
+path <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/mpb10km_bioclm/"
+years <- 1996:2015
+bioclm <- read.csv(paste0(outpath, "mpb10km_bioclm_mean.csv"))
