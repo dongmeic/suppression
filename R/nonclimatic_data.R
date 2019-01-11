@@ -72,18 +72,18 @@ df <- read.csv(paste0(csvpath, "mpb10km_nonclimate.csv"))
 MPB.wild <- df %>%
 dplyr::select(wilderness, allyears) %>%
 group_by(wilderness) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 MPB.gap <- df %>%
 dplyr::select(GAPs, allyears) %>%
 group_by(GAPs) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 MPB.mfri <- df %>% 
 subset(forest==1 & mfri %in% c(1:22)) %>%
 dplyr::select(mfri, allyears) %>%
 group_by(mfri) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
 mpb.acre.plot <- function(df, outnm, w){
@@ -103,7 +103,7 @@ MPB.vcc <- df %>%
 subset(forest==1 & vcc %in% c(1:6)) %>%
 dplyr::select(vcc, allyears) %>%
 group_by(vcc) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 mpb.acre.plot(MPB.vcc, 'vcc', 6)
 
@@ -111,7 +111,7 @@ MPB.pls <- df %>%
 subset(forest==1 & pls %in% c(1:20)) %>%
 dplyr::select(pls, allyears) %>%
 group_by(pls) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 mpb.acre.plot(MPB.pls, 'pls', 12)
 
@@ -119,7 +119,7 @@ MPB.pms <- df %>%
 subset(forest==1 & pms %in% c(1:20)) %>%
 dplyr::select(pms, allyears) %>%
 group_by(pms) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 mpb.acre.plot(MPB.pms, 'pms', 12)
 
@@ -127,7 +127,7 @@ MPB.prs <- df %>%
 subset(forest==1 & prs %in% c(1:20)) %>%
 dplyr::select(prs, allyears) %>%
 group_by(prs) %>%
-summarise(acres = sum(allyears), grids = sum(allyears>0), average=sum(allyears)/sum(allyears>0))
+summarise(acres = sum(allyears, na.rm=TRUE), grids = sum(!is.na(allyears)), average=sum(allyears, na.rm=TRUE)/sum(!is.na(allyears)))
 
 mpb.acre.plot(MPB.prs, 'prs', 12)
 
