@@ -25,7 +25,6 @@ test <- y.lbda
 hist(test)
 shapiro.test(test)
 plotNormalHistogram(test)
-de
 
 x = df.s$density # df.s$mStdAge # df.s$PctOld # df.s$PctLarge 
 cor.test(test, x)
@@ -60,3 +59,28 @@ ndf.s <- subset(ndf, !is.na(beetleAcres) & forest > 0 & !(vcc %in% c(111, 112, 1
 										 !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
 write.csv(ndf.s, paste0(csvpath, "mpb10km_input_data_cleaned.csv"), row.names=FALSE)
 
+# modeling
+indata <- read.csv(paste0(csvpath, "mpb10km_input_data_cleaned.csv"))
+vars <- c('host', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3')
+for (var in vars){
+	indata[,var] <- as.factor(indata[,var])
+}
+
+mod <- lm(
+  beetleAcres^0.07 ~ ., 
+  data=indata[, -which(names(indata) %in% c('forest', 'x','y','host'))])
+
+mod <- step(mod)
+  
+mod <- lm(
+ beetleAcres^0.07 ~ (lon + lat + etopo1 + density + PctLarge +
+     vcc + mfri + prs + pms + pls + GAP1 + GAP3 + vpd +
+     cwd + maxAugT + summerP0 + Tmean + mi + Tvar + wd + AugTmean +
+     OctTmin + AugMaxT + AugTmax + Acs + MarMin + ddAugJun + ddAugJul +
+     JanTmin + PPT + summerP2 + TMarAug + Mar20 + fallTmean +
+     MarTmin + maxT + Tmin + winterMin + summerTmean + Pmean +
+     minT + JanMin + TOctSep + Jan20 + PcumOctSep)^2,
+     data=indata[, -which(names(indata) %in% c('forest', 'x','y','host'))])
+
+anova(mod)
+TukeyHSD(aov(mod))
