@@ -65,22 +65,20 @@ vars <- c('host', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3')
 for (var in vars){
 	indata[,var] <- as.factor(indata[,var])
 }
+df <- indata[, -which(names(indata) %in% c('forest', 'x','y','host'))]
 
-mod <- lm(
-  beetleAcres^0.07 ~ ., 
-  data=indata[, -which(names(indata) %in% c('forest', 'x','y','host'))])
-
+mod <- lm(beetleAcres^0.07 ~ ., data=df)
+summary(mod)
 mod <- step(mod)
-  
+
 mod <- lm(
- beetleAcres^0.07 ~ (lon + lat + etopo1 + density + PctLarge +
-     vcc + mfri + prs + pms + pls + GAP1 + GAP3 + vpd +
-     cwd + maxAugT + summerP0 + Tmean + mi + Tvar + wd + AugTmean +
-     OctTmin + AugMaxT + AugTmax + Acs + MarMin + ddAugJun + ddAugJul +
-     JanTmin + PPT + summerP2 + TMarAug + Mar20 + fallTmean +
-     MarTmin + maxT + Tmin + winterMin + summerTmean + Pmean +
-     minT + JanMin + TOctSep + Jan20 + PcumOctSep)^2,
-     data=indata[, -which(names(indata) %in% c('forest', 'x','y','host'))])
+		beetleAcres^0.07 ~ (lon + lat + etopo1 + density + PctLarge +
+    vcc + mfri + prs + pms + pls + GAP1 + GAP3 + vpd + cwd +
+    maxAugT + summerP0 + Tmean + mi + Tvar + wd + AugTmean +
+    OctTmin + AugMaxT + AugTmax + MarMin + ddAugJun + ddAugJul +
+    JanTmin + PPT + summerP2 + TMarAug + Mar20 + fallTmean +
+    MarTmin + maxT + Tmin + summerTmean + Pmean + minT + JanMin +
+    TOctSep + Jan20 + PcumOctSep)^2, data=df)
 
 anova(mod)
 TukeyHSD(aov(mod))
