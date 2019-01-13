@@ -27,8 +27,8 @@ gini <- function(x, na.rm=TRUE){
 	}
 }
 
-mode <- function(x) {
-  return(names(sort(-table(na.omit(x))))[1])
+mode <- function(x, na.rm = TRUE) {
+  return(as.numeric(names(sort(-table(x)))[1]))
 }
 
 median.fire.size <- function(x, na.rm=TRUE){

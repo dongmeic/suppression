@@ -43,6 +43,11 @@ fwfod.n$Natural <- rep(1, length(fwfod.n$CAUSE))
 fire.sprs <- rasterized(fwfod.n.s, "FIRETYPE", sum)
 fire.natr <- rasterized(fwfod.n, "Natural", sum)
 pct.sprs <- fire.sprs/fire.natr
+size.sprs <- rasterized(fwfod.n.s, "SIZECLASSN", mode) 
+
+rasterized(fwfod.n.s, "SIZECLASSN", mode)
+
+
 fpafod$logFS <- log(fpafod$FIRE_SIZE+1)
 firesize <- rasterized(fpafod, "logFS", median)
 firefreq <- rasterized(fpafod, "FIRE_SIZE", count)

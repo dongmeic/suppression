@@ -61,7 +61,7 @@ write.csv(ndf.s, paste0(csvpath, "mpb10km_input_data_cleaned.csv"), row.names=FA
 
 # modeling
 indata <- read.csv(paste0(csvpath, "mpb10km_input_data_cleaned.csv"))
-vars <- c('host', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3')
+vars <- c('host', 'host', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3')
 for (var in vars){
 	indata[,var] <- as.factor(indata[,var])
 }
