@@ -28,7 +28,8 @@ indata <- subset(ndf, !is.na(beetleAcres) & forest == '1' & !(vcc %in% c(111, 11
 
 df <- indata[, -which(names(indata) %in% c('forest', 'x','y','host'))]			
 mod <- lm(beetleAcres^0.07 ~ ., data=df)
-mod <- step(mod)
+summary(mod)
+#mod <- step(mod)
 
 mod <- lm(beetleAcres^0.07 ~ lon + lat + etopo1 + density + PctLarge +
     vcc + mfri + prs + pms + pls + GAP1 + GAP3 + vpd + cwd +
@@ -86,10 +87,10 @@ for (i in 1:nrow(interactions)) {
 
 interactions$f1f2 <- paste0(interactions$f1, ':', interactions$f2)
 
-for(iter in 1:2){
-	print(paste('Simulation', iter))
+for(iter in 1:100){
+	print(paste('Iteration', iter))
 	print(paste('Best AIC:', bestAIC))
-	print(paste('Best model:', mod$call))
+	print(paste('Best model:', bestModel$call[2]))
   terms <- sample(interactions$f1f2, 20)
   var.string <- function(){
     for (term in terms){
@@ -119,6 +120,11 @@ for(iter in 1:2){
 	if(AIC(mod) < bestAIC){
 		bestModel <- mod
 		bestAIC <- AIC(mod)
-	}	
+	}
+	print(paste('Best AIC:', bestAIC))
+	print(paste('Best model:', gsub('\n  ', '', mod$call[2])))
+	print(paste('R squared', summary(mod)$r.squared))
+	print(paste('Adjusted R squared', summary(mod)$adj.r.squared))
 }
 
+print('All done')
