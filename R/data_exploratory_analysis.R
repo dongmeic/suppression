@@ -1,6 +1,7 @@
 # data distribution, correlation, linear regression
 library(rcompanion)
 library(MASS)
+library(mgcv)
 
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
 df <- read.csv(paste0(csvpath, "mpb10km_nonclimate.csv"))
@@ -47,7 +48,9 @@ clm.predictors <- c('vpd', 'cwd', 'maxAugT', 'summerP0', 'Tmean', 'mi', 'Tvar', 
 nonclm.predictors <- c("lon", "lat", "etopo1", "x", "y", "allyears", 
 												"vegetation", "forest", "mStdAge", "density", "PctLarge", "PctOld",
 												"vcc", "mfri", "prs", "pms", "pls", "GAP", "GAP2", "GAP3")
-ndf <- cbind(df[,nonclm.predictors], bioclm[,clm.predictors])
+fires <- read.csv(paste0(csvpath,"suppressed_fires.csv"))
+
+ndf <- cbind(df[,nonclm.predictors], fires, bioclm[,clm.predictors])
 ndf$GAP2 <- ifelse(ndf$GAP2 == 2, 1, 0)
 ndf$GAP3 <- ifelse(ndf$GAP3 == 3, 1, 0)
 colnames(ndf)[which(colnames(ndf)=='allyears')] <- 'beetleAcres'
@@ -61,15 +64,46 @@ write.csv(ndf.s, paste0(csvpath, "mpb10km_input_data_cleaned.csv"), row.names=FA
 
 # modeling
 indata <- read.csv(paste0(csvpath, "mpb10km_input_data_cleaned.csv"))
-vars <- c('host', 'host', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3')
+vars <- c('host', 'forest', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3', 'SprsSize')
 for (var in vars){
 	indata[,var] <- as.factor(indata[,var])
 }
-df <- indata[, -which(names(indata) %in% c('forest', 'x','y','host'))]
 
-mod <- lm(beetleAcres^0.07 ~ ., data=df)
+df <- indata[, -which(names(indata) %in% c('forest', 'x','y','host'))]
+length(na.omit(df$SprsFires))
+
+df1 <- df[complete.cases(df), ]
+df2 <- as.data.frame(scale(df1[,-which(names(df1) %in% c('beetleAcres', vars))]))
+df2 <- cbind(df1[,c('beetleAcres', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3', 'SprsSize')], df2)
+
+mod <- lm(beetleAcres^0.07 ~ ., data=df2)
 summary(mod)
 mod <- step(mod)
+
+mod <- lm(
+		beetleAcres^0.07 ~ (vcc + mfri + pms + pls + GAP1 + lat + etopo1 +
+    density + PctLarge + SprsFires + PctSprs + vpd + cwd + Tmean +
+    mi + wd + AugTmean + OctTmin + AugMaxT + AugTmax + MarMin +
+    ddAugJun + ddAugJul + JanTmin + PPT + summerP2 + TMarAug +
+    Mar20 + fallTmean + MarTmin + maxT + Tmin + summerTmean +
+    Pmean + minT + JanMin + TOctSep + Jan20 + PcumOctSep)^2, data=df2)
+    
+gam.mod <- gam(beetleAcres ~ vcc + mfri + pms + pls + GAP1 + te(lat) + te(etopo1) +
+    te(density) + te(PctLarge) + te(SprsFires) + te(PctSprs) + te(vpd) + te(cwd) + te(Tmean) +
+    te(mi) + te(wd) + te(AugTmean) + te(OctTmin) + te(AugMaxT) + te(AugTmax) + te(MarMin) +
+    te(ddAugJun) + te(ddAugJul) + te(JanTmin) + te(PPT) + te(summerP2) + te(TMarAug) +
+    Mar20 + te(fallTmean) + te(MarTmin) + te(maxT) + te(Tmin) + te(summerTmean) +
+    te(Pmean) + te(minT) + te(JanMin) + te(TOctSep) + Jan20 + te(PcumOctSep), data=df2)
+
+par(mfrow=c(3, 3))
+plot(gam.mod)
+  
+gam.mod <- gam(beetleAcres ~ vcc + mfri + pms + pls + GAP1 + s(lat) + s(etopo1) +
+    s(density) + s(PctLarge) + s(SprsFires) + s(PctSprs) + s(vpd) + s(cwd) + s(Tmean) +
+    s(mi) + s(wd) + s(AugTmean) + s(OctTmin) + s(AugMaxT) + s(AugTmax) + s(MarMin) +
+    s(ddAugJun) + s(ddAugJul) + s(JanTmin) + s(PPT) + s(summerP2) + s(TMarAug) +
+    Mar20 + s(fallTmean) + s(MarTmin) + s(maxT) + s(Tmin) + s(summerTmean) +
+    s(Pmean) + s(minT) + s(JanMin) + s(TOctSep) + Jan20 + s(PcumOctSep), data=df2)    
 
 mod <- lm(
 		beetleAcres^0.07 ~ (lon + lat + etopo1 + density + PctLarge +

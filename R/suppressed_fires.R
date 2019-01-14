@@ -44,9 +44,19 @@ fire.sprs <- rasterized(fwfod.n.s, "FIRETYPE", sum)
 fire.natr <- rasterized(fwfod.n, "Natural", sum)
 pct.sprs <- fire.sprs/fire.natr
 size.sprs <- rasterized(fwfod.n.s, "SIZECLASSN", mode) 
+fwfod.n.s$STARTDATED <- as.Date(fwfod.n.s$STARTDATED, format = "%Y/%m/%d")
+fwfod.n.s$CONTRDATED <- as.Date(fwfod.n.s$CONTRDATED, format = "%Y/%m/%d")
+fwfod.n.s$SprsDuration <- abs(as.numeric(difftime(fwfod.n.s$STARTDATED, fwfod.n.s$CONTRDATED, units="days")))
+dates.sprs <- rasterized(fwfod.n.s, "SprsDuration", median) 
 
-rasterized(fwfod.n.s, "SIZECLASSN", mode)
-
+# extract values
+SprsFires <- data.frame(SprsFires=extract(fire.sprs, mpb10km.pt, method='simple'))
+PctSprs <- data.frame(PctSprs=extract(pct.sprs, mpb10km.pt, method='simple'))
+SprsSize <- data.frame(SprsSize=extract(size.sprs, mpb10km.pt, method='simple'))
+SprsDays <- data.frame(SprsDays=extract(dates.sprs, mpb10km.pt, method='simple'))
+df <- cbind(SprsFires, PctSprs, SprsSize, SprsDays)
+csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
+write.csv(df, paste0(csvpath, "suppressed_fires.csv"), row.names=FALSE)
 
 fpafod$logFS <- log(fpafod$FIRE_SIZE+1)
 firesize <- rasterized(fpafod, "logFS", median)
