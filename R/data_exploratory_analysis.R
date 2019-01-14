@@ -26,6 +26,8 @@ test <- y.lbda
 hist(test)
 shapiro.test(test)
 plotNormalHistogram(test)
+qqnorm(test)
+qqline(test)
 
 x = df.s$density # df.s$mStdAge # df.s$PctOld # df.s$PctLarge 
 cor.test(test, x)
