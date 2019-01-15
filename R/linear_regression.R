@@ -41,11 +41,12 @@ indata <- subset(ndf, !is.na(beetleAcres) & forest == '1' & !(vcc %in% c(111, 11
 										 !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
 
 df <- indata[, -which(names(indata) %in% c('forest', 'x','y','host'))]							 
+
 for(var in preds.interact){
-	var1 <- unlist(strsplit(var, ":", fixed = TRUE))[1]
-	var2 <- unlist(strsplit(var, ":", fixed = TRUE))[2]
-	df[,var] <- df[,var1] * df[,var2]
-	print(paste('Added interaction term:', var))
+    var1 <- unlist(strsplit(var, ":", fixed = TRUE))[1]
+    var2 <- unlist(strsplit(var, ":", fixed = TRUE))[2]
+    df[,var] <- df[,var1] * df[,var2]
+    print(paste('Added interaction term:', var))
 }
 
 df1 <- as.data.frame(scale(df[,-which(names(df) %in% c('beetleAcres', vars))]))
@@ -60,29 +61,30 @@ mod <- lm(
     wd + AugTmean + AugMaxT + AugTmax + Acs + MarMin + ddAugJun +
     ddAugJul + JanTmin + PPT + summerP2 + TMarAug + Mar20 + fallTmean +
     maxT + Tmin + winterMin + summerTmean + Pmean + minT + JanMin +
-    TOctSep + PcumOctSep + `lon:vpd` + `lat:Tvar` + `lat:maxAugT` +
-    `lat:summerP0` + `lat:mi` + `lon:OctTmin` + `lon:AugMaxT` +
-    `etopo1:AugTmax` + `etopo1:cwd` + `lon:Tmean` + `lon:mi` +
-    `lon:AugTmean` + `lat:MarMin` + `lon:wd` + `lat:summerP2` +
-    `lat:TMarAug` + `lat:Mar20` + `lat:fallTmean` + `etopo1:TMarAug` +
-    `lat:MarTmin` + `lat:vpd` + `etopo1:vpd` + `lat:AugMaxT` +
-    `lon:summerP2` + `lat:summerTmean` + `etopo1:wd` + `lat:Pmean` +
-    `lon:maxAugT` + `lon:summerTmean` + `lon:Jan20` + `lon:PcumOctSep` +
-    `lon:JanTmin` + `lon:minT` + `lat:AugTmax` + `lon:Pmean` +
-    `etopo1:AugTmean` + `etopo1:PcumOctSep` + `etopo1:summerTmean` +
-    `etopo1:Tvar` + `etopo1:PPT` + `lat:TOctSep` + `etopo1:TOctSep` +
-    `lat:wd` + `etopo1:minT` + `lon:MarMin` + `lon:TOctSep` +
-    `lat:minT` + `lat:Tmin` + `etopo1:JanTmin` + `lon:JanMin` +
-    `lon:Tvar` + `etopo1:JanMin` + `etopo1:Pmean` + `lon:fallTmean` +
-    `etopo1:OctTmin` + `lat:ddAugJun` + `etopo1:Tmin` + `lon:MarTmin` +
-    `lat:ddAugJul` + `etopo1:summerP0` + `etopo1:Jan20` + `lat:PPT` +
-    `lon:ddAugJul` + `etopo1:MarTmin` + `etopo1:Mar20` + `lon:TMarAug` +
-    `etopo1:MarMin` + `lat:JanTmin` + `etopo1:fallTmean` + `lon:AugTmax` +
-    `etopo1:summerP2`, data=df2)
+    TOctSep + PcumOctSep + lon:vpd + lat:Tvar + lat:maxAugT +
+    lat:summerP0 + lat:mi + lon:OctTmin + lon:AugMaxT +
+    etopo1:AugTmax + etopo1:cwd + lon:Tmean + lon:mi +
+    lon:AugTmean + lat:MarMin + lon:wd + lat:summerP2 +
+    lat:TMarAug + lat:Mar20 + lat:fallTmean + etopo1:TMarAug +
+    lat:MarTmin + lat:vpd + etopo1:vpd + lat:AugMaxT +
+    lon:summerP2 + lat:summerTmean + etopo1:wd + lat:Pmean +
+    lon:maxAugT + lon:summerTmean + lon:Jan20 + lon:PcumOctSep +
+    lon:JanTmin + lon:minT + lat:AugTmax + lon:Pmean +
+    etopo1:AugTmean + etopo1:PcumOctSep + etopo1:summerTmean +
+    etopo1:Tvar + etopo1:PPT + lat:TOctSep + etopo1:TOctSep +
+    lat:wd + etopo1:minT + lon:MarMin + lon:TOctSep +
+    lat:minT + lat:Tmin + etopo1:JanTmin + lon:JanMin +
+    lon:Tvar + etopo1:JanMin + etopo1:Pmean + lon:fallTmean +
+    etopo1:OctTmin + lat:ddAugJun + etopo1:Tmin + lon:MarTmin +
+    lat:ddAugJul + etopo1:summerP0 + etopo1:Jan20 + lat:PPT +
+    lon:ddAugJul + etopo1:MarTmin + etopo1:Mar20 + lon:TMarAug +
+    etopo1:MarMin + lat:JanTmin + etopo1:fallTmean + lon:AugTmax +
+    etopo1:summerP2, data=df2)
 
 summary(mod)
 
 ptm <- proc.time()
+df3 <- df[complete.cases(df), ]
 mod <- lm(
 		beetleAcres^0.07 ~ (lon + lat + etopo1 + density + PctLarge +
     vcc + mfri + prs + pms + pls + GAP1 + GAP3 + vpd + cwd +
@@ -90,10 +92,11 @@ mod <- lm(
     OctTmin + AugMaxT + AugTmax + MarMin + ddAugJun + ddAugJul +
     JanTmin + PPT + summerP2 + TMarAug + Mar20 + fallTmean +
     MarTmin + maxT + Tmin + summerTmean + Pmean + minT + JanMin +
-    TOctSep + Jan20 + PcumOctSep)^2, data=df)
+    TOctSep + Jan20 + PcumOctSep)^2, data=df3)
 proc.time() - ptm
 
 summary(mod)
+
 ptm <- proc.time()
 mod <- step(mod)
 proc.time() - ptm

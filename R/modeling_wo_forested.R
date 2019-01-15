@@ -32,9 +32,3 @@ fit <- glm(beetleAcres^0.07 ~ lon + etopo1 + forest + density + PctOld +
     PcumOctSep,data=df1,family=gaussian())
     
 summary(fit) # display results
-confint(fit) # 95% CI for the coefficients
-exp(coef(fit)) # exponentiated coefficients
-exp(confint(fit)) # 95% CI for exponentiated coefficients
-predict(fit, type="response") # predicted values
-residuals(fit, type="deviance") # residuals
- 
