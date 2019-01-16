@@ -73,6 +73,14 @@ par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
 plot(CostPerAcre, col = brewer.pal(ncls,cols))
 mpb.acre <- rasterized(mpb.pts, "ACRES", sum.log)
 
+# extract values
+SprsCosts <- data.frame(SprsCosts=extract(costs, mpb10km.pt, method='simple'))
+SprsAcres <- data.frame(SprsAcres=extract(acres, mpb10km.pt, method='simple'))
+SprsCPA <- data.frame(SprsCPA=extract(CostPerAcre, mpb10km.pt, method='simple'))
+df <- cbind(SprsCosts, SprsAcres, SprsCPA)
+csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
+write.csv(df, paste0(csvpath, "suppressed_costs.csv"), row.names=FALSE)
+
 mapping("pct_sprs", pct.sprs, "Percent of naturally-caused fires suppressed", d=1, "Reds", "kmeans")
 mapping("fire_sprs", fire.sprs, "Number of naturally-caused fires suppressed", d=0,"Reds", "kmeans")
 mapping("firesize", firesize, "Median fire size (log)", d=0, "YlOrBr", "pretty")
