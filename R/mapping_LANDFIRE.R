@@ -122,6 +122,11 @@ table(pls.forest$RASTERVALU); table(pls.forest$LABEL)
 
 # resample landcover to get forested area
 landcover_wus <- raster('/gpfs/projects/gavingrp/dongmeic/beetle/raster/nlcd_2011_landcover_clip.tif')
+png(paste0(out,"landcover.png"), width=8, height=8, units="in", res=300)
+par(mfrow=c(1,1), xpd=FALSE, mar=rep(0.5,4))
+plot(landcover_wus)
+plot(mpb10km, add=T)
+dev.off()
 
 forested <- function(x, na.rm=TRUE){
 	if(any(x %in% c(41, 42, 43))){

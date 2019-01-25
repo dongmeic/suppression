@@ -90,3 +90,4 @@ mapping("costs", logCost, "Fire containment cost per fire (log)", d=0,  "YlOrBr"
 mapping("gini_index", gini.fs, "Gini index of fire size", d=1, "YlOrBr", "quantile")
 mapping("gini_index_costs", gini.cost, "Gini index of fire containment costs", d=1, "YlOrBr", "pretty")
 mapping("mpb_acre", mpb.acre, "Beetle affected acres (log)", d=0, "YlOrBr", "kmeans")
+mapping("dates_sprs", dates.sprs, "Containment duration", d=0, "YlOrBr", "kmeans")
