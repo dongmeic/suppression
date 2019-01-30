@@ -1,8 +1,8 @@
 #install.packages('rJava')
+Sys.setenv(NOAWT=1)
 library(rJava)
 library(RNetLogo)
-if (Sys.info()['sysname'] == 'Darwin') {
-  libjvm <- paste0(system2('/usr/libexec/java_home',stdout = TRUE)[1],'/jre/lib/server/libjvm.dylib')
-  message (paste0('Load libjvm.dylib from: ',libjvm))
-  dyn.load(libjvm)
-}
+nl_path <- "/Applications/NetLogo 6.0.1"
+NLStart(file.path(nl_path, 'Java'), gui = TRUE, nl.jarname='netlogo-6.0.1.jar')
+model_path <- file.path("models", "Sample Models", "Biology", "Wolf Sheep Predation.nlogo")
+NLLoadModel(file.path(nl_path, model_path))
