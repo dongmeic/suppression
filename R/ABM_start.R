@@ -10,6 +10,7 @@ costs.df <- read.csv('suppressed_costs.csv')
 fires.df <- read.csv('suppressed_fires.csv')
 crs <- "+proj=laea +lat_0=50 +lon_0=-100 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0"
 indata <- cbind(indata, costs.df, fires.df)
+#write.csv(indata, 'mpb10km_data.csv', row.names = FALSE)
 df <- indata[!is.na(indata$SprsCosts) & !is.na(indata$SprsFires) 
              & !is.na(indata$SprsDays) & !is.na(indata$beetleAcres) 
              & !(indata$vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)), ]
@@ -42,8 +43,10 @@ setup <- function(df=indata, xdim=3, ydim=3){
   n <- dim(ind)[1]
   no.trees=sample(100:200000,n)
   no.young.tree=unlist(lapply(no.trees, function(x) sample(1:x, 1)))
-  no.old.tree=no.trees-no.young.tree
-  FakeDF <- data.frame(no.trees=no.trees, no.young.tree=no.young.tree,no.old.tree=no.old.tree)
+  no.mid_aged.tree=unlist(lapply(no.trees - no.young.tree, function(x) sample(1:x, 1)))
+  no.old.tree=no.trees - no.young.tree - no.mid_aged.tree
+  FakeDF <- data.frame(no.trees=no.trees, no.young.tree=no.young.tree, 
+                       no.mid_aged.tree=no.mid_aged.tree,no.old.tree=no.old.tree)
   ind <- cbind(ind, FakeDF)
   return(ind)
 }
@@ -54,8 +57,42 @@ pal <- colorRampPalette(c("white","black"))
 map <- function(var='etopo1', k=9){
   r <- rasterFromXYZ(ind[, c("x", "y", var)])
   plot(r, axes=FALSE, box=FALSE,legend=FALSE, col = pal(k), main=var)
+  text(r, col='red')
 }
 
 map(var = 'no.trees')
 
+# yearly change in tree age-class
+forest.aging <- function(mortality.rate=0.01, 
+                         regenerate.rate=0.02, 
+                         growth.rate.young=0.05, 
+                         growth.rate.old=0.06,
+                         disturbance=F, 
+                         disturbance.intensity=NULL){
+  
+  no.old.tree = no.old.tree + no.mid_aged.tree * growth.rate.old
+  no.mid_aged.tree = no.mid_aged.tree + no.young.tree * growth.rate.young
+  no.young.tree = no.young.tree + no.trees * regenerate.rate
+  no.trees = - no.trees * mortality.rate + no.old.tree + no.mid_aged.tree + no.young.tree
+  
+  if(disturbance){
+    if(disturbance.type %in% c('fire', 'insect', 'logging', 'wind')){
+      no.trees = no.trees - no.trees * disturbance.intensity
+      no.young.tree = sample(1:no.trees, 1)
+      no.mid_aged.tree = sample(1:(no.trees - no.young.tree), 1)
+      no.old.tree = no.trees - no.young.tree - no.mid_aged.tree
+    }else if(disturbance.type == 'clearcut'){
+      no.trees = 0
+      no.young.tree = 0
+      no.mid_aged.tree = 0 
+      no.old.tree = 0
+    }
+  }
+  if(after.clearcut){
+    no.young.tree = sample(100:200000,n)
+    no.trees = no.young.tree
+    
+  }
+ 
+}
 
