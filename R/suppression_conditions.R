@@ -4,7 +4,10 @@
 library(ggplot2)
 library(ggpubr)
 #inpath <- 'H:/14.winter_2019/data/'
-inpath <- '/Volumes/dongmeic/14.winter_2019/data/'
+#inpath <- '/Volumes/dongmeic/14.winter_2019/data/'
+inpath <- '/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/'
+setwd('/gpfs/projects/gavingrp/dongmeic/beetle/output/plots')
+
 indata <- read.csv(paste0(inpath, 'mpb10km_nonclimate.csv'))
 head(indata)
 fire_sprs <- read.csv(paste0(inpath, 'suppressed_fires.csv'))
@@ -55,10 +58,12 @@ p + geom_point(aes(colour = GAPs), alpha = 1/5)+
 df.s <- df[!is.na(df$allyears) & !(df$vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181))
             & df$GAPs %in% c(1, 2, 3),]
 #df.s <- df.s[df.s$GAPs %in% c('1', '2', '3'),]
+png("vcc_GAPs.png", width=8, height=6, units="in", res=300)
 p <- ggplot(df.s, aes(x=vcc, y=log(allyears)))
-p + geom_boxplot(aes(colour = GAPs))
+#p + geom_boxplot(aes(colour = GAPs))
 p + geom_boxplot(aes(colour = GAPs))+
   facet_wrap(~GAPs)
+dev.off()
 
 df.s <- df[!is.na(df$allyears) & !(df$mfri %in% c(111, 112, 131, 132, 133))
            & df$GAPs %in% c(1, 2, 3),]
