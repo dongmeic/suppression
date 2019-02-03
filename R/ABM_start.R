@@ -76,23 +76,10 @@ forest.aging <- function(mortality.rate=0.01,
   no.trees = - no.trees * mortality.rate + no.old.tree + no.mid_aged.tree + no.young.tree
   
   if(disturbance){
-    if(disturbance.type %in% c('fire', 'insect', 'logging', 'wind')){
       no.trees = no.trees - no.trees * disturbance.intensity
       no.young.tree = sample(1:no.trees, 1)
       no.mid_aged.tree = sample(1:(no.trees - no.young.tree), 1)
       no.old.tree = no.trees - no.young.tree - no.mid_aged.tree
-    }else if(disturbance.type == 'clearcut'){
-      no.trees = 0
-      no.young.tree = 0
-      no.mid_aged.tree = 0 
-      no.old.tree = 0
-    }
   }
-  if(after.clearcut){
-    no.young.tree = sample(100:200000,n)
-    no.trees = no.young.tree
-    
-  }
- 
 }
 
