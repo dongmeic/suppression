@@ -65,7 +65,7 @@ tree.file <- paste("/Volumes/dongmeic/beetle/data/text/FIA/westus/", statecode[1
 tree.table <- read.csv(tree.file)
 names(tree.table)
 tree.size <- aggregate(DIA ~ PLT_CN, data = tree.table, mean)
-tree.plrg <- aggregate(DIA ~ PLT_CN, data = tree.table, function(x) count.tree(x,8))
+tree.plrg <- aggregate(DIA ~ PLT_CN, data = tree.table, function(x) count.tree(x,12))
 if (length(na.omit(tree.table$BHAGE)) != 0){
   tree.pold <- aggregate(BHAGE ~ PLT_CN, data = tree.table, function(x) count.tree(x,80))
 } else {
@@ -144,7 +144,7 @@ for (i in 2:n){
   plot.table.2 <- rbind(plot.table.2, plot.table.4)
   print(paste(statecode[i], "done!"))
 }
-proc.time() - ptm #537.381
+proc.time() - ptm #1193.146 
 # plot.table.3 <- within(plot.table.2, rm(FIRE_SRS)) # OR
 # plot.table.3 <- subset(plot.table.2, select=-FIRE_SRS)
 # plot.table.3 <- plot.table.2[ ,!names(plot.table.2) %in% "FIRE_SRS"]
