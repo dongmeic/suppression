@@ -66,6 +66,7 @@ write.csv(elev@data, paste0(csvpath, "mpb10km_location.csv"), row.names=FALSE)
 df <- cbind(elev@data, MPBdf, Hostdf, LCdf, FIAdf, LFdf, GAPdf) 
 df <- df[,-3]; df <- df[,-4]; head(df)
 write.csv(df, paste0(csvpath, "mpb10km_nonclimate.csv"), row.names=FALSE)
+# need to update from mapping_beetle_affected_acres.R
 
 df <- read.csv(paste0(csvpath, "mpb10km_nonclimate.csv"))
 
