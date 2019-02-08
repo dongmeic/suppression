@@ -15,7 +15,7 @@ hist(y.log)
 y.tuk <- transformTukey(y,plotit=FALSE) # sample(y,5000)
 y.lbda <- y ^ 0.05
 
-Box <- boxcox(y ~ 1, lambda = seq(-6,6,0.1))      # Try values -6 to 6 by 0.1, y[y>0]
+Box <- boxcox(y[y>0] ~ 1, lambda = seq(-6,6,0.1))      # Try values -6 to 6 by 0.1, y[y>0]
 Cox <- data.frame(Box$x, Box$y)            # Create a data frame with the results
 Cox2 <- Cox[with(Cox, order(-Cox$Box.y)),] # Order the new data frame by decreasing y
 Cox2[1,]                                  # Display the lambda with the greatest
@@ -31,11 +31,6 @@ qqline(test)
 
 x = df.s$density # df.s$mStdAge # df.s$PctOld # df.s$PctLarge 
 cor.test(test, x)
-
-# average the beetle affected acres
-df$allyears <- rowMeans(df[,6:25], na.rm=TRUE)
-write.csv(df[,6:26], paste0(csvpath, "mpb10km_mpb_acres.csv"), row.names=FALSE)
-write.csv(df, paste0(csvpath, "mpb10km_nonclimate.csv"), row.names=FALSE)
 
 # mean values of bioclimate data
 bioclm <- read.csv(paste0(csvpath, "mpb10km_bioclm/mpb10km_bioclm_mean.csv"))

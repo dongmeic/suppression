@@ -81,7 +81,7 @@ for(year in 1997:2016){
 	}
 }
 
-ndf$allyears <- rowSums(ndf, na.rm=TRUE)
+ndf$allyears <- rowMeans(ndf, na.rm=TRUE)
 write.csv(ndf, paste0(csvpath, "mpb10km_mpb_acres.csv"), row.names=FALSE)
 
 df[,6:26] <- ndf

@@ -18,6 +18,9 @@ fwfod <- spTransform(fwfod, crs)
 fpafod <- readOGR(dsn=paste0(fire.path, "RDS-2013-0009.4_GDB/Data/FPA_FOD_20170508.gdb"), 
                layer="Fires", stringsAsFactors = FALSE, dropNULLGeometries = FALSE) 
 fpafod <- spTransform(fpafod, crs)
+
+fwfod.c <- fwfod[!is.na(fwfod$CAUSE),]
+fwfod.c.s <- fwfod.c[!is.na(fwfod.c$FIRETYPE) & fwfod.c$FIRETYPE == "1",]
 # select naturally caused fires
 fwfod.n <- fwfod[!is.na(fwfod$CAUSE) & fwfod$CAUSE == "Natural",]
 # select suppressed fires
@@ -40,21 +43,45 @@ dev.off()
 
 fwfod.n.s$FIRETYPE <- as.numeric(fwfod.n.s$FIRETYPE)
 fwfod.n$Natural <- rep(1, length(fwfod.n$CAUSE))
+fwfod.c.s$FIRETYPE <- as.numeric(fwfod.c.s$FIRETYPE)
+fwfod.c$Cause <- rep(1, length(fwfod.c$CAUSE))
+# suppression of naturally caused fires
 fire.sprs <- rasterized(fwfod.n.s, "FIRETYPE", sum)
 fire.natr <- rasterized(fwfod.n, "Natural", sum)
+# all suppressed fires
+fire.sprs.a <- rasterized(fwfod.c.s, "FIRETYPE", sum)
+fire.a <- rasterized(fwfod.c, "Cause", sum)
 pct.sprs <- fire.sprs/fire.natr
-size.sprs <- rasterized(fwfod.n.s, "SIZECLASSN", mode) 
+pct.sprs.a <- fire.sprs.a/fire.a
+#size.sprs <- rasterized(fwfod.n.s, "SIZECLASSN", mode)
+fwfod.n.s$TOTALACRES <- ifelse(fwfod.n.s$TOTALACRES > 24710.5, 24710.5, fwfod.n.s$TOTALACRES)
+acres.sprs <- rasterized(fwfod.n.s, "TOTALACRES", mean)
+fwfod.c.s$TOTALACRES <- ifelse(fwfod.c.s$TOTALACRES > 24710.5, 24710.5, fwfod.c.s$TOTALACRES)
+acres.sprs.a <- rasterized(fwfod.c.s, "TOTALACRES", mean)
+
 fwfod.n.s$STARTDATED <- as.Date(fwfod.n.s$STARTDATED, format = "%Y/%m/%d")
 fwfod.n.s$CONTRDATED <- as.Date(fwfod.n.s$CONTRDATED, format = "%Y/%m/%d")
+fwfod.n.s$OUTDATED <- as.Date(fwfod.n.s$OUTDATED, format = "%Y/%m/%d")
 fwfod.n.s$SprsDuration <- abs(as.numeric(difftime(fwfod.n.s$STARTDATED, fwfod.n.s$CONTRDATED, units="days")))
-dates.sprs <- rasterized(fwfod.n.s, "SprsDuration", median) 
+fwfod.n.s$OutDuration <- abs(as.numeric(difftime(fwfod.n.s$STARTDATED, fwfod.n.s$OUTDATED, units="days")))
+
+fwfod.c.s$STARTDATED <- as.Date(fwfod.c.s$STARTDATED, format = "%Y/%m/%d")
+fwfod.c.s$CONTRDATED <- as.Date(fwfod.c.s$CONTRDATED, format = "%Y/%m/%d")
+fwfod.c.s$OUTDATED <- as.Date(fwfod.c.s$OUTDATED, format = "%Y/%m/%d")
+fwfod.c.s$SprsDuration <- abs(as.numeric(difftime(fwfod.c.s$STARTDATED, fwfod.c.s$CONTRDATED, units="days")))
+fwfod.c.s$OutDuration <- abs(as.numeric(difftime(fwfod.c.s$STARTDATED, fwfod.c.s$OUTDATED, units="days")))
+
+dates.sprs <- rasterized(fwfod.n.s, "SprsDuration", median)
+dates.out <- rasterized(fwfod.n.s, "OutDuration", median) 
 
 # extract values
 SprsFires <- data.frame(SprsFires=extract(fire.sprs, mpb10km.pt, method='simple'))
 PctSprs <- data.frame(PctSprs=extract(pct.sprs, mpb10km.pt, method='simple'))
-SprsSize <- data.frame(SprsSize=extract(size.sprs, mpb10km.pt, method='simple'))
+#SprsSize <- data.frame(SprsSize=extract(size.sprs, mpb10km.pt, method='simple'))
+SprsAcre <- data.frame(SprsAcre=extract(acres.sprs, mpb10km.pt, method='simple'))
 SprsDays <- data.frame(SprsDays=extract(dates.sprs, mpb10km.pt, method='simple'))
-df <- cbind(SprsFires, PctSprs, SprsSize, SprsDays)
+OutDays <- data.frame(OutDays=extract(dates.out, mpb10km.pt, method='simple'))
+df <- cbind(SprsFires, PctSprs, SprsAcre, SprsDays, OutDays)
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
 write.csv(df, paste0(csvpath, "suppressed_fires.csv"), row.names=FALSE)
 
