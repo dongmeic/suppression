@@ -18,7 +18,11 @@ MPBdf <- btl.shp@data[,-3:-1]
 # host presence
 host.shp <- readOGR(paste0(path, "/mpb10km"), "mpb10km_corehost", stringsAsFactors = FALSE)
 head(host.shp@data)
-Hostdf <- host.shp@data[,4:5]
+plot(host.shp[host.shp$vegetation=='1', ], cex=0.5, pch=19, col='blue')
+cohost <- rasterized(host.shp, 'vegetation', mode)
+FIA_host <- rasterized(host.shp, 'FIA_hosts', mode)
+Hostdf <- data.frame(host=extract(cohost, mpb10km.pt, method='simple'), 
+										 FIA_host=extract(FIA_host, mpb10km.pt, method='simple'))
 write.csv(Hostdf, paste0(csvpath, "mpb10km_corehost.csv"), row.names=FALSE)
 
 # forested area, GAP, wilderness

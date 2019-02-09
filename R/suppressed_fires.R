@@ -54,9 +54,10 @@ fire.a <- rasterized(fwfod.c, "Cause", sum)
 pct.sprs <- fire.sprs/fire.natr
 pct.sprs.a <- fire.sprs.a/fire.a
 #size.sprs <- rasterized(fwfod.n.s, "SIZECLASSN", mode)
-fwfod.n.s$TOTALACRES <- ifelse(fwfod.n.s$TOTALACRES > 24710.5, 24710.5, fwfod.n.s$TOTALACRES)
+gridacre <- 24710.5
+fwfod.n.s$TOTALACRES <- ifelse(fwfod.n.s$TOTALACRES > gridacre, gridacre, fwfod.n.s$TOTALACRES)
 acres.sprs <- rasterized(fwfod.n.s, "TOTALACRES", mean)
-fwfod.c.s$TOTALACRES <- ifelse(fwfod.c.s$TOTALACRES > 24710.5, 24710.5, fwfod.c.s$TOTALACRES)
+fwfod.c.s$TOTALACRES <- ifelse(fwfod.c.s$TOTALACRES > gridacre, gridacre, fwfod.c.s$TOTALACRES)
 acres.sprs.a <- rasterized(fwfod.c.s, "TOTALACRES", mean)
 
 fwfod.n.s$STARTDATED <- as.Date(fwfod.n.s$STARTDATED, format = "%Y/%m/%d")
@@ -91,12 +92,16 @@ firefreq <- rasterized(fpafod, "FIRE_SIZE", count)
 gini.fs <- rasterized(fpafod, "FIRE_SIZE", gini)
 gini.cost <- rasterized(sit209, "Costs", gini)
 sit209 <- sit209[!is.na(sit209$Costs) & sit209$Costs >0,]
+sit209$Costs <- ifelse(sit209$Acres > gridacre, sit209$Costs/sit209$Acres * gridacre, sit209$Costs)
+sit209$Acres <- ifelse(sit209$Acres > gridacre, gridacre, sit209$Acres)
 sit209$LogCost <- log(sit209$Costs)
 logCost <- rasterized(sit209, "LogCost", median)
 costs <- rasterized(sit209, "Costs", median)
 acres <- rasterized(sit209, "Acres", median)
 CostPerAcre <- costs/acres
 par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
+ncls <- 5
+cols <- "Reds"
 plot(CostPerAcre, col = brewer.pal(ncls,cols))
 mpb.acre <- rasterized(mpb.pts, "ACRES", sum.log)
 

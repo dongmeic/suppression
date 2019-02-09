@@ -15,7 +15,7 @@ ndf <- cbind(df[,nonclm.predictors], bioclm[,clm.predictors])
 ndf$GAP2 <- ifelse(ndf$GAP2 == 2, 1, 0)
 ndf$GAP3 <- ifelse(ndf$GAP3 == 3, 1, 0)
 colnames(ndf)[which(colnames(ndf)=='allyears')] <- 'beetleAcres'
-colnames(ndf)[which(colnames(ndf)=='vegetation')] <- 'host'
+#colnames(ndf)[which(colnames(ndf)=='vegetation')] <- 'host'
 colnames(ndf)[which(colnames(ndf)=='GAP')] <- 'GAP1'
 vars <- c('host', 'forest', 'vcc', 'mfri', 'prs', 'pms', 'pls', 'GAP1', 'GAP2', 'GAP3')
 for (var in vars){
