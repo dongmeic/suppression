@@ -4,7 +4,7 @@ indata <- read.csv(paste0(csvpath, 'mpb10km_input_data.csv')) # from interaction
 costs.df <- read.csv(paste0(csvpath, 'suppressed_costs.csv')) # from suppressed_fires.R
 fires.df <- read.csv(paste0(csvpath, 'suppressed_fires.csv')) # from suppressed_fires.R
 df <- cbind(indata, costs.df, fires.df)
-write.csv(df, paste0(csvpath, 'mpb10km_data.csv'), row.names=FALSE)
+#write.csv(df, paste0(csvpath, 'mpb10km_data.csv'), row.names=FALSE)
 
 # total number of grid cells
 n <- 36965
@@ -30,6 +30,14 @@ dim(df.sprs)[1]/n # 0.3753821
 # number of grid cells with both suppression costs and suppressed fires
 df.sprs.cost <- df[!is.na(df$SprsCosts) & !is.na(df$SprsFires),]
 dim(df.sprs.cost)[1]/n # 0.07774922
+
+# number of grid cells with containment days
+df.day <- df[!is.na(df$SprsDays),]
+dim(df.day)[1]/n # 0.3399161
+
+# number of grid cells with out days
+df.out <- df[!is.na(df$OutDays),]
+dim(df.out)[1]/n # 0.3709455
 
 # number of grid cells with host presence
 df.host <- subset(df, host==1)

@@ -44,7 +44,7 @@ outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
 get.plot <- function(df, outnm, title, w){
 	png(paste0(outpath, title, outnm, ".png"), width=w, height=9, units="in", res=300)
 	par(mfrow=c(3,1),xpd=FALSE,mar=c(3,3,3,0))
-	if(title %in% c('percent of fires suppressed ', 'suppressed fire size ', 'containment duration ')){
+	if(title %in% c('percent of fires suppressed ', 'fire size suppressed ', 'containment duration ', 'fire out duration ')){
 		if(title == 'suppressed fire size '){
 			barplot(df$mode, main = paste("mode of", title), axes = F, cex.main=2)
 		}else{
@@ -64,12 +64,13 @@ get.plot <- function(df, outnm, title, w){
 	dev.off()
 }
 
-vars <- c('SprsCosts', 'SprsAcres', 'SprsFires', 'PctSprs', 'SprsDays')
+vars <- c('SprsCosts', 'SprsAcres', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
 titles <- c('costs ', 'suppressed acres ', 'number of fires suppressed ',
-						'percent of fires suppressed ', 'containment duration ')
+						'percent of fires suppressed ', 'fire size suppressed ', 'containment duration ',
+						'fire out duration ')
 vals <- c('mfri', 'vcc', 'pls', 'pms', 'prs')
 ws <- c(12,6,12,12,12)
-funs <- c('sum', 'sum', 'sum', 'mean', 'mean')
+funs <- c('sum', 'sum', 'sum', 'mean', 'mean', 'mean', 'mean')
 
 for(var in vars){
 	for(val in vals){	
