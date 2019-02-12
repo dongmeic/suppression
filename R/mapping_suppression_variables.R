@@ -79,6 +79,28 @@ mapping.btl <- function(shp, var, title='MPB affected acres', cols="YlOrRd"){
 	return(p)
 }
 
+mapping.host <- function(shp, var, title, cols="PuBuGn"){
+	r <- rasterize(shp, mpb10km.pts.r, var, fun=mean, na.rm=TRUE)
+	ncls <- 6
+	brks <- getJenksBreaks(getValues(r), ncls)
+	if(var=='host'){
+		labels <- c("No", "Yes")
+		cols <- c("#d0d1e6", "#016c59")
+		r <- as.factor(r)
+		rat <- levels(r)[[1]]
+		rat[["labels"]] <- labels
+		levels(r) <- rat
+		p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
+						scales = list(draw = FALSE), margin=F, main=title)
+	}else{
+		p <- levelplot(r, col.regions=brewer.pal(ncls,cols)[-1], cuts=ncls-1, at=brks, xlab="", ylab="", par.settings = list(axis.line = list(col = "transparent")), 
+						scales = list(draw = FALSE), margin=F, main=title)
+	}
+	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+	return(p)
+}
+
+
 shp <- spdf
 
 var <- 'beetleAcres'
@@ -97,6 +119,9 @@ mapping.sprs(shp, 'OutDays', 'Fire out duration (Days)')
 mapping.sprs(shp, 'SprsFires', 'Number of naturally-caused fires suppressed')
 mapping.sprs(shp, 'PctSprs', 'Ratio of suppressed naturally-caused fires')
 mapping.btl(shp, 'beetleAcres')
+mapping.host(shp, 'mStdAge', 'Stand age (Years)')
+mapping.host(shp, 'density', 'Tree density (No. trees per acre)')
+mapping.host(shp, 'host', 'Mountain pine beetle core host presence')
 
 
 
