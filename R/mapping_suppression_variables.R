@@ -61,18 +61,28 @@ mapping.sprs <- function(shp, var, title, cols="YlOrRd"){
 	shp <- shp[shp@data[,var] <= qt99,]
 	r <- rasterize(shp, mpb10km.pts.r, var, fun=mean, na.rm=TRUE)
 	ncls <- 6
-	brks <- getJenksBreaks(getValues(r), ncls-1)
-	p <- levelplot(r, col.regions=brewer.pal(ncls,cols)[-1], cuts=ncls, at=brks, xlab="", ylab="", par.settings = list(axis.line = list(col = "transparent")), 
+	brks <- getJenksBreaks(getValues(r), ncls)
+	#print(brks)
+	p <- levelplot(r, col.regions=brewer.pal(ncls,cols)[-1], cuts=ncls-1, at=brks, xlab="", ylab="", par.settings = list(axis.line = list(col = "transparent")), 
 						scales = list(draw = FALSE), margin=F, main=title)
 	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
 	return(p)
 }
 
+mapping.btl <- function(shp, var, title='MPB affected acres', cols="YlOrRd"){
+	r <- rasterize(shp, mpb10km.pts.r, var, fun=mean, na.rm=TRUE)
+	ncls <- 6
+	brks <- getJenksBreaks(getValues(r), ncls+1)
+	p <- levelplot(r, col.regions=brewer.pal(ncls,cols), cuts=ncls, at=brks, xlab="", ylab="", par.settings = list(axis.line = list(col = "transparent")), 
+						scales = list(draw = FALSE), margin=F, main=title)
+	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+	return(p)
+}
 
 shp <- spdf
 
-var <- 'SprsCPA'
-title <- 'Suppression costs per acre ($)'
+var <- 'beetleAcres'
+title <- 'MPB affected acres'
 
 mapping.LF(shp, 'vcc')
 mapping.LF(shp, 'mfri')
@@ -84,6 +94,10 @@ mapping.sprs(shp, 'SprsCosts', 'Suppression costs ($)')
 mapping.sprs(shp, 'SprsAcres', 'Suppression acres')
 mapping.sprs(shp, 'SprsDays', 'Containment duration (Days)')
 mapping.sprs(shp, 'OutDays', 'Fire out duration (Days)')
+mapping.sprs(shp, 'SprsFires', 'Number of naturally-caused fires suppressed')
+mapping.sprs(shp, 'PctSprs', 'Ratio of suppressed naturally-caused fires')
+mapping.btl(shp, 'beetleAcres')
+
 
 
 
