@@ -4,6 +4,7 @@ library(BAMMtools)
 
 source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
+out <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/maps/"
 indata <- read.csv(paste0(csvpath, 'mpb10km_data.csv'))
 df <- subset(indata, !is.na(beetleAcres))
 
@@ -100,28 +101,63 @@ mapping.host <- function(shp, var, title, cols="PuBuGn"){
 	return(p)
 }
 
+# output figures
+# tree maps
+vars <- c("mStdAge", "density", "PctLarge", "PctOld", "host", 'beetleAcres')
+titles <- c('Stand age (Years)', 'Tree density (No. trees per acre)', 'Ratio of large trees', 
+						'Ratio of old trees', 'MPB core host presence', 'Beetle affected acres')
+pos <- cbind(c(1,1),c(1,2),c(1,3),
+						 c(2,1),c(2,2),c(2,3))
+png(paste0(out,'stand_variable_maps.png'), width=12, height=8, units="in", res=300)
+par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
+for(var in vars){
+	if(var != 'beetleAcres'){
+		p <- mapping.host(spdf, var, titles[which(vars==var)])
+	}else{
+		p <- mapping.btl(spdf, var)
+	}
+	print(p,split=c(pos[,which(vars==var)][2], pos[,which(vars==var)][1], 3, 2), newpage=FALSE) 
+	print(var)
+}
+dev.off()
 
-shp <- spdf
+# fire regime maps
+vars <- c("vcc", "mfri", "prs", "pms", "pls", 'beetleAcres')
+png(paste0(out,'fire_regime_variable_maps.png'), width=12, height=8, units="in", res=300)
+par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
+for(var in vars){
+	if(var != 'beetleAcres'){
+		p <- mapping.LF(spdf, var)
+	}else{
+		p <- mapping.btl(spdf, var)
+	}
+	print(p,split=c(pos[,which(vars==var)][2], pos[,which(vars==var)][1], 3, 2), newpage=FALSE) 
+	print(var)
+}
+dev.off()
+# fire data maps
+vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 
+					'SprsAcre', 'SprsDays', 'OutDays', 'beetleAcres')
+titles <- c('Suppression costs ($)', 'Suppression acres', 'Suppression costs per acre ($)', 
+						'No. of fires suppressed', 'Ratio of suppressed fires',
+						'Mean fire size (Acres)', 'Containment duration (Days)', 'Fire out duration (Days)')
 
-var <- 'beetleAcres'
-title <- 'MPB affected acres'
-
-mapping.LF(shp, 'vcc')
-mapping.LF(shp, 'mfri')
-mapping.LF(shp, 'pls')
-mapping.LF(shp, 'pms')
-mapping.LF(shp, 'prs')
-mapping.sprs(shp, 'SprsCPA', 'Suppression costs per acre ($)')
-mapping.sprs(shp, 'SprsCosts', 'Suppression costs ($)')
-mapping.sprs(shp, 'SprsAcres', 'Suppression acres')
-mapping.sprs(shp, 'SprsDays', 'Containment duration (Days)')
-mapping.sprs(shp, 'OutDays', 'Fire out duration (Days)')
-mapping.sprs(shp, 'SprsFires', 'Number of naturally-caused fires suppressed')
-mapping.sprs(shp, 'PctSprs', 'Ratio of suppressed naturally-caused fires')
-mapping.btl(shp, 'beetleAcres')
-mapping.host(shp, 'mStdAge', 'Stand age (Years)')
-mapping.host(shp, 'density', 'Tree density (No. trees per acre)')
-mapping.host(shp, 'host', 'Mountain pine beetle core host presence')
+pos <- cbind(c(1,1),c(1,2),c(1,3),
+						 c(2,1),c(2,2),c(2,3),
+						 c(3,1),c(3,2),c(3,3))
+						 
+png(paste0(out,'suppression_variable_maps.png'), width=12, height=12, units="in", res=300)
+par(mfrow=c(3,3), xpd=FALSE, mar=rep(0.5,4))
+for(var in vars){
+	if(var != 'beetleAcres'){
+		p <- mapping.sprs(spdf, var, titles[which(vars==var)])
+	}else{
+		p <- mapping.btl(spdf, var)
+	}
+	print(p,split=c(pos[,which(vars==var)][2], pos[,which(vars==var)][1], 3, 3), newpage=FALSE) 
+	print(var)
+}
+dev.off()
 
 
 
