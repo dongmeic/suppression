@@ -43,7 +43,48 @@ foreach(var=vars)%dopar%{
 	write.csv(df, paste0(outpath, "mpb10km_", var, "_1902_2016.csv"), row.names=FALSE)
 }
 proc.time() - ptm
-# done
+#    user   system  elapsed
+# 315.892   14.780 1233.997
+
+# correlation between year and temperature and precipitation
+tmean <- read.csv(paste0(outpath, "mpb10km_Tmean_1902_2016.csv"))
+pmean <- read.csv(paste0(outpath, "mpb10km_Pmean_1902_2016.csv"))
+
+coeff <- function(x, coeff=T){
+	df <- data.frame(time=years, clim=as.numeric(x))
+	mod <- glm(clim ~ time, family = gaussian(), data=df)
+	if(coeff){
+		return(summary(mod)$coefficients[2,1])
+	}else{
+		return(summary(mod)$coefficients[1,1])
+	}	
+}
+
+ptm <- proc.time()
+tcoeff <- vector()
+pcoeff <- vector()
+tintct <- vector()
+pintct <- vector()
+for(i in 1:dim(tmean)[1]){
+	if(sum(!is.na(tmean[i,])) != 0){
+		v1 <- coeff(tmean[i,])
+		v2 <- coeff(pmean[i,])
+		v3 <- coeff(tmean[i,], coeff=F)
+		v4 <- coeff(pmean[i,], coeff=F)
+	
+		tintct[i] <- v3
+		pintct[i] <- v4
+		tcoeff[i] <- v1
+		pcoeff[i] <- v2
+	
+		print(i)	
+	}
+}
+proc.time() - ptm
+
+df <- data.frame(tcoeff=tcoeff, pcoeff=pcoeff, tintct=tintct, pintct=pintct)
+write.csv(df, paste0(outpath,"coeff_time.csv"), row.names=FALSE)
+
 
 
 
