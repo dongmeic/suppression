@@ -50,9 +50,9 @@ proc.time() - ptm
 tmean <- read.csv(paste0(outpath, "mpb10km_Tmean_1902_2016.csv"))
 pmean <- read.csv(paste0(outpath, "mpb10km_Pmean_1902_2016.csv"))
 
-coeff <- function(x, coeff=T){
-	df <- data.frame(time=years, clim=as.numeric(x))
-	mod <- glm(clim ~ time, family = gaussian(), data=df)
+coeff <- function(x1, x2, coeff=T){
+	df <- data.frame(clim1 = as.numeric(x1), clim2 = as.numeric(x2))
+	mod <- glm(clim2 ~ clim1, family = gaussian(), data=df)
 	if(coeff){
 		return(summary(mod)$coefficients[2,1])
 	}else{
@@ -65,12 +65,12 @@ tcoeff <- vector()
 pcoeff <- vector()
 tintct <- vector()
 pintct <- vector()
-for(i in 1:dim(tmean)[1]){
-	if(sum(!is.na(tmean[i,])) != 0){
-		v1 <- coeff(tmean[i,])
-		v2 <- coeff(pmean[i,])
-		v3 <- coeff(tmean[i,], coeff=F)
-		v4 <- coeff(pmean[i,], coeff=F)
+for(i in 2:dim(tmean)[1]){
+	if(sum(!is.na(tmean[i,])) != 0 & sum(!is.na(tmean[i-1,])) != 0){
+		v1 <- coeff(tmean[i-1,], tmean[i,])
+		v2 <- coeff(pmean[i-1,], pmean[i,])
+		v3 <- coeff(tmean[i-1,], tmean[i,], coeff=F)
+		v4 <- coeff(pmean[i-1,], pmean[i,], coeff=F)
 	
 		tintct[i] <- v3
 		pintct[i] <- v4
@@ -81,10 +81,12 @@ for(i in 1:dim(tmean)[1]){
 	}
 }
 proc.time() - ptm
+#done
 
 df <- data.frame(tcoeff=tcoeff, pcoeff=pcoeff, tintct=tintct, pintct=pintct)
-write.csv(df, paste0(outpath,"coeff_time.csv"), row.names=FALSE)
+write.csv(df, paste0(outpath,"coeff_time_climate.csv"), row.names=FALSE)
 
+# initial climate values
 
 
 
