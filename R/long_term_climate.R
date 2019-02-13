@@ -87,6 +87,6 @@ proc.time() - ptm
 df <- data.frame(tcoeff=tcoeff, pcoeff=pcoeff, tintct=tintct, pintct=pintct)
 write.csv(df, paste0(outpath,"coeff_time_climate.csv"), row.names=FALSE)
 
-out <- '/gpfs/projects/gavingrp/dongmeic/beetle/output/tables'
-write.csv(df, paste0(out,"mpb10km_with_beetle_data.csv"), row.names=FALSE)
+#out <- '/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/'
+#write.csv(df, paste0(out,"mpb10km_with_beetle_data.csv"), row.names=FALSE)
 

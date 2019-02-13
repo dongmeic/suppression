@@ -175,7 +175,9 @@ title <- "Fire severity"
 p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
 				scales = list(draw = FALSE), margin=F, main=title)
 p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
-
+png(paste0(out, "fire_severity.png"), width = 8, height = 8, units = "in", res=300)
+print(p)
+dev.off()
 
 
 
