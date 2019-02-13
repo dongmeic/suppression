@@ -8,6 +8,8 @@ sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs',
 					'SprsAcre', 'SprsDays', 'OutDays')
 outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
 
+df.cpa <- df[df$SprsCPA != Inf, ]
+
 get.df <- function(df, var1, var2, fun){
 	if(var2 == 'mfri'){
 		cond <- paste0(var2, ' %in% c(1:22)')
@@ -44,8 +46,7 @@ get.plot <- function(df, var, agr.var, title){
 	eval(parse(text=strings))
 }
 
-# consistent
-plot.lf <- function(plotvar = 'beetleAcres', agr.var = 'grids', fun='sum'){
+plot.lf <- function(df=df, plotvar = 'beetleAcres', agr.var = 'grids', fun='sum'){
 	png(paste0(outpath, plotvar, "_", agr.var, "_plots.png"), width=15, height=6, units="in", res=300)
 	par(mfrow=c(2,3),xpd=FALSE,mar=c(3,3,3,0))
 	for(var in lf.vars){
@@ -59,3 +60,50 @@ plot.lf(agr.var = 'average')
 plot.lf(plotvar = 'PctSprs', agr.var = 'mean', fun='mean')
 plot.lf(plotvar = 'OutDays', agr.var = 'mean', fun='mean')
 plot.lf(plotvar = 'SprsCosts', agr.var = 'percent', fun='sum')
+plot.lf(plotvar = 'SprsAcre', agr.var = 'mean', fun='mean')
+plot.lf(plotvar = 'SprsAcres', agr.var = 'average', fun='sum')
+plot.lf(plotvar = 'SprsFires', agr.var = 'average', fun='sum')
+plot.lf(plotvar = 'PctLarge', agr.var = 'mean', fun='mean')
+plot.lf(plotvar = 'density', agr.var = 'mean', fun='mean')
+plot.lf(df=df.cpa, plotvar = 'SprsCPA', agr.var = 'median', fun='median')
+
+
+plt.vars <- c('beetleAcres', 'mStdAge', 'density', 'PctOld', sprs.vars)
+sprs.titles <- c('Suppression costs', 'Suppression acres', 'Unit suppression costs',
+								 'No. fires suppressed', 'Ratio of fires suppressed', 'Fire size suppressed',
+								 'Containment duration', 'Fire out duration')
+plt.titles <- c('MPB affected acres', 'Stand age', 'Tree density', 'Ratio of old trees', sprs.titles)
+agr.vars <- c('average', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'average', 'mean',
+							'median', 'mean', 'mean')
+funs <- c('sum', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'sum', 'mean',
+					'median', 'mean', 'mean')
+plot.vcc <- function(){
+	png(paste0(outpath, "vcc_plots.png"), width=12, height=9, units="in", res=300)
+	par(mfrow=c(3,4),xpd=FALSE,mar=c(3,3,3,0))
+	for(var in plt.vars){
+		if(var == 'SprsCPA'){
+			sdf <- get.df(df.cpa, var, 'vcc', fun=funs[plt.vars==var])
+		}else{
+			sdf <- get.df(df, var, 'vcc', fun=funs[plt.vars==var])
+		}	
+		get.plot(sdf, 'vcc', agr.var=agr.vars[plt.vars==var], plt.titles[plt.vars==var])
+	}
+	dev.off()
+}
+plot.vcc()
+
+plot.severity <- function(){
+	png(paste0(outpath, "severity_plots.png"), width=12, height=9, units="in", res=300)
+	par(mfrow=c(3,4),xpd=FALSE,mar=c(3,3,3,0))
+	for(var in plt.vars){
+		if(var == 'SprsCPA'){
+			sdf <- get.df(df.cpa, var, 'severity.no', fun=funs[plt.vars==var])
+		}else{
+			sdf <- get.df(df, var, 'severity.no', fun=funs[plt.vars==var])
+		}	
+		get.plot(sdf, 'severity.no', agr.var=agr.vars[plt.vars==var], plt.titles[plt.vars==var])
+	}
+	dev.off()
+}
+plot.severity()
+
