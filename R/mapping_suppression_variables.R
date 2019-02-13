@@ -159,8 +159,22 @@ for(var in vars){
 }
 dev.off()
 
+# fire severity map
+df$severity <- ifelse(df$prs >= 17 & df$mfri >= 16, 'replacement', ifelse(df$pls >= 17 & df$mfri <= 4, 'low', 'mixed'))
+df$severity.no <- ifelse(df$severity == 'replacement', 3, ifelse(df$severity == 'low', 1, 2))
+spdf <- df2spdf(1, 2, 'lon', 'lat', df)
 
-
+labels <- c("Low", "Mixed", "Replacement")
+cols <- c("#e41a1c", "#4daf4a", "#377eb8")
+r <- rasterize(spdf, mpb10km.pts.r, "severity.no", fun=mean, na.rm=TRUE)
+r <- as.factor(r)
+rat <- levels(r)[[1]]
+rat[["labels"]] <- labels
+levels(r) <- rat
+title <- "Fire severity"
+p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
+				scales = list(draw = FALSE), margin=F, main=title)
+p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
 
 
 

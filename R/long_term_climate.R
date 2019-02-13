@@ -81,12 +81,12 @@ for(i in 2:dim(tmean)[1]){
 	}
 }
 proc.time() - ptm
-#done
+#    user   system  elapsed
+# 888.953    2.159 1787.150
 
 df <- data.frame(tcoeff=tcoeff, pcoeff=pcoeff, tintct=tintct, pintct=pintct)
 write.csv(df, paste0(outpath,"coeff_time_climate.csv"), row.names=FALSE)
 
-# initial climate values
-
-
+out <- '/gpfs/projects/gavingrp/dongmeic/beetle/output/tables'
+write.csv(df, paste0(out,"mpb10km_with_beetle_data.csv"), row.names=FALSE)
 
