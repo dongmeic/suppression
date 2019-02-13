@@ -39,92 +39,23 @@ titles <- c('Vegetation condition class', 'Mean fire return interval', 'Percent 
 						'Percent of mixed-severity fires', 'Percent of low-severity fires', 'Fire severity')
 
 outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
-get.plot.grids <- function(df, var, title){
-	barplot(df$grids, names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)
+get.plot <- function(df, var, agr.var, title){
+	strings <- paste0('barplot(df$', agr.var, ', names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)')
+	eval(parse(text=strings))
 }
 
 # consistent
-plot.grids <- function(plotvar = 'beetleAcres', fun='sum'){
-	png(paste0(outpath, plotvar, "_grid_plots.png"), width=15, height=6, units="in", res=300)
+plot.lf <- function(plotvar = 'beetleAcres', agr.var = 'grids', fun='sum'){
+	png(paste0(outpath, plotvar, "_", agr.var, "_plots.png"), width=15, height=6, units="in", res=300)
 	par(mfrow=c(2,3),xpd=FALSE,mar=c(3,3,3,0))
 	for(var in lf.vars){
 		sdf <- get.df(df, plotvar, var, fun)
-		get.plot.grids(sdf, var, titles[lf.vars==var])
+		get.plot(sdf, var, agr.var, titles[lf.vars==var])
 	}
 	dev.off()
 }
-plot.grids()
-
-get.plot.sum <- function(df, var, title){
-	barplot(df$sum, names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)
-}
-
-plot.sum <- function(plotvar = 'beetleAcres', fun='sum'){
-	png(paste0(outpath, plotvar, "_sum_plots.png"), width=15, height=6, units="in", res=300)
-	par(mfrow=c(2,3),xpd=FALSE,mar=c(3,3,3,0))
-	for(var in lf.vars){
-		sdf <- get.df(df, plotvar, var, fun)
-		get.plot.sum(sdf, var, titles[lf.vars==var])
-	}
-	dev.off()
-}
-plot.sum()
-plot.sum(plotvar = 'SprsFires')
-plot.sum(plotvar = 'SprsCosts')
-
-get.plot.mean <- function(df, var, title){
-	barplot(df$mean, names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)
-}
-
-plot.mean <- function(plotvar = 'PctSprs', fun='mean'){
-	png(paste0(outpath, plotvar, "_mean_plots.png"), width=15, height=6, units="in", res=300)
-	par(mfrow=c(2,3),xpd=FALSE,mar=c(3,3,3,0))
-	for(var in lf.vars){
-		sdf <- get.df(df, plotvar, var, fun)
-		get.plot.mean(sdf, var, titles[lf.vars==var])
-	}
-	dev.off()
-}
-plot.mean()
-plot.mean(plotvar = 'OutDays')
-plot.mean(plotvar = 'SprsDays')
-plot.mean(plotvar = 'mStdAge')
-plot.mean(plotvar = 'density')
-plot.mean(plotvar = 'PctLarge')
-plot.mean(plotvar = 'PctOld')
-plot.mean(plotvar = 'SprsAcre')
-
-get.plot.average <- function(df, var, title){
-	barplot(df$average, names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)
-}
-
-# function is 'summary'
-plot.average <- function(plotvar = 'beetleAcres', fun='sum'){
-	png(paste0(outpath, plotvar, "_average_plots.png"), width=15, height=6, units="in", res=300)
-	par(mfrow=c(2,3),xpd=FALSE,mar=c(3,3,3,0))
-	for(var in lf.vars){
-		sdf <- get.df(df, plotvar, var, fun)
-		get.plot.average(sdf, var, titles[lf.vars==var])
-	}
-	dev.off()
-}
-plot.average()
-plot.average(plotvar = 'SprsFires')
-plot.average(plotvar = 'SprsCosts')
-
-
-get.plot.percent <- function(df, var, title){
-	barplot(df$percent, names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)
-}
-
-plot.percent <- function(plotvar = 'SprsCosts', fun='sum'){
-	png(paste0(outpath, plotvar, "_percent_plots.png"), width=15, height=6, units="in", res=300)
-	par(mfrow=c(2,3),xpd=FALSE,mar=c(3,3,3,0))
-	for(var in lf.vars){
-		sdf <- get.df(df, plotvar, var, fun)
-		get.plot.percent(sdf, var, titles[lf.vars==var])
-	}
-	dev.off()
-}
-plot.percent()
-plot.percent(plotvar = 'SprsFires')
+plot.lf()
+plot.lf(agr.var = 'average')
+plot.lf(plotvar = 'PctSprs', agr.var = 'mean', fun='mean')
+plot.lf(plotvar = 'OutDays', agr.var = 'mean', fun='mean')
+plot.lf(plotvar = 'SprsCosts', agr.var = 'percent', fun='sum')
