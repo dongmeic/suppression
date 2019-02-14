@@ -143,19 +143,26 @@ get.table <- function(df, var, agr.var, fun){
 	return(data)
 }
 
-data <- get.table(df, 'beetleAcres', 'sum')
-barplot(data, col=c(1, 2, 4))
+data <- get.table(df, 'beetleAcres', 'average', 'sum')
+
+get.plot.col <- function(df, title){
+	barplot(df, col=c('#636363', '#bdbdbd', '#f0f0f0'), main = title, cex.names = 1.2, cex.lab=1.2, cex.axis=1.2, cex.main=1.5)
+}
+get.plot.col(data, 'MPB affected acres')
 
 plot.vcc.severity <- function(){
-	png(paste0(outpath, "vcc_plots.png"), width=12, height=9, units="in", res=300)
+	png(paste0(outpath, "vcc_severity_plots.png"), width=12, height=9, units="in", res=300)
 	par(mfrow=c(3,4),xpd=FALSE,mar=c(3,3,3,0))
 	for(var in plt.vars){
 		if(var == 'SprsCPA'){
-			sdf <- get.table(df.cpa, var, fun=funs[plt.vars==var])
+			dt <- get.table(df.cpa, var, agr.var=agr.vars[plt.vars==var], fun=funs[plt.vars==var])
 		}else{
-			sdf <- get.table(df, var, fun=funs[plt.vars==var])
+			dt <- get.table(df, var, agr.var=agr.vars[plt.vars==var], fun=funs[plt.vars==var])
 		}	
-		get.plot(sdf, 'vcc', agr.var=agr.vars[plt.vars==var], plt.titles[plt.vars==var])
+		get.plot.col(dt, plt.titles[plt.vars==var])
+		print(var)
 	}
 	dev.off()
 }
+plot.vcc.severity()
+
