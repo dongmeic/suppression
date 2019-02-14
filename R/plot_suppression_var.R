@@ -202,5 +202,21 @@ get.table.sev <- function(df, var, agr.var, fun){
 get.plot.col.sev <- function(df, title){
 	barplot(df, col=rev(brewer.pal(6,"Greys")), main = title, cex.names = 1.2, cex.lab=1.2, cex.axis=1.2, cex.main=1.5)
 }
-
+data <- get.table.sev(df, "beetleAcres", "average", "sum")
 get.plot.col.sev(data, 'MPB affected acres')
+
+plot.severity.vcc <- function(){
+	png(paste0(outpath, "severity_vcc_plots.png"), width=9, height=9, units="in", res=300)
+	par(mfrow=c(3,4),xpd=FALSE,mar=c(3,3,3,0))
+	for(var in plt.vars){
+		if(var == 'SprsCPA'){
+			dt <- get.table.sev(df.cpa, var, agr.var=agr.vars[plt.vars==var], fun=funs[plt.vars==var])
+		}else{
+			dt <- get.table.sev(df, var, agr.var=agr.vars[plt.vars==var], fun=funs[plt.vars==var])
+		}	
+		get.plot.col.sev(dt, plt.titles[plt.vars==var])
+		print(var)
+	}
+	dev.off()
+}
+plot.severity.vcc()
