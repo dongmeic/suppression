@@ -1,7 +1,7 @@
 library(rgdal)
 library(raster)
 library(dplyr)
-library(ggplot2)
+library(RColorBrewer)
 
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
 df <- read.csv(paste0(csvpath,"mpb10km_with_beetle_data.csv"))
@@ -166,3 +166,41 @@ plot.vcc.severity <- function(){
 }
 plot.vcc.severity()
 
+get.table.sev <- function(df, var, agr.var, fun){
+	df.vcc1 <- df[df$vcc == 1, ]
+	df.vcc2 <- df[df$vcc == 2, ]
+	df.vcc3 <- df[df$vcc == 3, ]
+	df.vcc4 <- df[df$vcc == 4, ]
+	df.vcc5 <- df[df$vcc == 5, ]
+	df.vcc6 <- df[df$vcc == 6, ]
+	sdf <- as.data.frame(get.df(df, var, 'severity.no', fun=fun))
+	sdf.vcc1 <- as.data.frame(get.df(df.vcc1, var, 'severity.no', fun=fun))
+	sdf.vcc2 <- as.data.frame(get.df(df.vcc2, var, 'severity.no', fun=fun))
+	sdf.vcc3 <- as.data.frame(get.df(df.vcc3, var, 'severity.no', fun=fun))
+	sdf.vcc4 <- as.data.frame(get.df(df.vcc4, var, 'severity.no', fun=fun))
+	sdf.vcc5 <- as.data.frame(get.df(df.vcc5, var, 'severity.no', fun=fun))
+	sdf.vcc6 <- as.data.frame(get.df(df.vcc6, var, 'severity.no', fun=fun))
+	sdf.group <- rbind(sdf.vcc1, sdf.vcc2, sdf.vcc3, sdf.vcc4, sdf.vcc5, sdf.vcc6)
+	sdf.group$vcc <- c(rep('vcc1', dim(sdf.vcc1)[1]), rep('vcc2', dim(sdf.vcc2)[1]), 
+										 rep('vcc3', dim(sdf.vcc3)[1]), rep('vcc4', dim(sdf.vcc4)[1]),
+										 rep('vcc5', dim(sdf.vcc5)[1]), rep('vcc6', dim(sdf.vcc6)[1]))
+	mat <- matrix(0, ncol=length(unique(sdf.group$severity.no)), nrow=length(unique(sdf.group$vcc)))
+	rownames(mat) <- sort(unique(sdf.group$vcc))
+	colnames(mat) <- sort(unique(sdf.group$severity.no))
+	for (v in sort(unique(sdf.group$vcc))) {
+		for (sev in sort(unique(sdf.group$severity.no))) {
+			 v.sum <- sum(sdf.group[sdf.group$severity.no == sev, 'grids'])
+			 if(length(sdf.group[sdf.group$vcc == v & sdf.group$severity.no == sev, 'grids']) != 0){
+					mat[v, sev] <- sdf.group[sdf.group$vcc == v & sdf.group$severity.no == sev, 'grids'] / v.sum
+			 }  
+		}
+	}
+	data <- mat * rbind(sdf[,agr.var], sdf[,agr.var], sdf[,agr.var], sdf[,agr.var], sdf[,agr.var],sdf[,agr.var])
+	return(data)
+}
+
+get.plot.col.sev <- function(df, title){
+	barplot(df, col=rev(brewer.pal(6,"Greys")), main = title, cex.names = 1.2, cex.lab=1.2, cex.axis=1.2, cex.main=1.5)
+}
+
+get.plot.col.sev(data, 'MPB affected acres')
