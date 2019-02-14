@@ -52,6 +52,14 @@ host <- function(x, na.rm=TRUE){
 	}
 }
 
+roadless <- function(x, na.rm=TRUE){
+	if('1' %in% x){
+		return(1)
+	}else{
+		return(0)
+	}
+}
+
 # region of interest
 mpb10km.path <- "/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles/mpb10km"
 mpb10km <- readOGR(dsn = mpb10km.path, layer = "mpb10km")

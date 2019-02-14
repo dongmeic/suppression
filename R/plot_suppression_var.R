@@ -1,4 +1,5 @@
 library(rgdal)
+library(raster)
 library(dplyr)
 library(ggplot2)
 
@@ -67,7 +68,6 @@ plot.lf(plotvar = 'PctLarge', agr.var = 'mean', fun='mean')
 plot.lf(plotvar = 'density', agr.var = 'mean', fun='mean')
 plot.lf(df=df.cpa, plotvar = 'SprsCPA', agr.var = 'median', fun='median')
 
-
 plt.vars <- c('beetleAcres', 'mStdAge', 'density', 'PctOld', sprs.vars)
 sprs.titles <- c('Suppression costs', 'Suppression acres', 'Unit suppression costs',
 								 'No. fires suppressed', 'Ratio of fires suppressed', 'Fire size suppressed',
@@ -106,4 +106,43 @@ plot.severity <- function(){
 	dev.off()
 }
 plot.severity()
+
+source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
+shp.path <- '/gpfs/projects/gavingrp/dongmeic/beetle/shapefiles'
+roadless.shp <- readOGR(dsn=shp.path, layer='mpb10km_wilderness_roadless', stringsAsFactors=F)
+wilderness.t <- rasterized(roadless.shp, "wilderness", roadless)
+roadless.t <- rasterized(roadless.shp, "roadless", roadless)
+
+# vegetation condition class with fire severity
+
+var <- 'beetleAcres'
+fun <- 'sum'
+get.table <- function(df, var, fun){
+	df.low <- df[df$severity == 'low', ]
+	df.mixed <- df[df$severity == 'mixed', ]
+	df.replacement <- df[df$severity == 'replacement', ]
+	sdf <- as.data.frame(get.df(df, var, 'vcc', fun=fun))
+	sdf.low <- as.data.frame(get.df(df.low, var, 'vcc', fun='sum'))
+	sdf.mixed <- as.data.frame(get.df(df.mixed, var, 'vcc', fun='sum'))
+	sdf.replacement <- as.data.frame(get.df(df.replacement, var, 'vcc', fun='sum'))
+	sdf.group <- rbind(sdf.low, sdf.mixed, sdf.replacement)
+	sdf.group$severity <- c(rep('low', dim(sdf.low)[1]), rep('mixed', dim(sdf.mixed)[1]), 
+										rep('replacement', dim(sdf.replacement)[1]))
+	mat <- matrix(0, ncol=length(unique(sdf.group$vcc)), nrow=length(unique(sdf.group$severity)))
+	rownames(mat) <- sort(unique(sdf.group$severity))
+	colnames(mat) <- sort(unique(sdf.group$vcc))
+	for (sev in sort(unique(sdf.group$severity))) {
+		for (v in sort(unique(sdf.group$vcc))) {
+			 sev.sum <- sum(sdf.group[sdf.group$vcc == v, 'grids'])
+			 if(length(sdf.group[sdf.group$severity == sev & sdf.group$vcc == v, 'grids']) != 0){
+					mat[sev, v] <- sdf.group[sdf.group$severity == sev & sdf.group$vcc == v, 'grids'] / sev.sum
+			 }  
+		}
+	}
+	data <- mat * rbind(sdf[,'average'], sdf[,'average'],sdf[,'average'])
+	return(data)
+}
+
+data <- get.table(df, 'beetleAcres', 'sum')
+barplot(data, col=c(1, 2, 4))
 
