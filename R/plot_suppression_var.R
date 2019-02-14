@@ -117,14 +117,14 @@ roadless.t <- rasterized(roadless.shp, "roadless", roadless)
 
 var <- 'beetleAcres'
 fun <- 'sum'
-get.table <- function(df, var, fun){
+get.table <- function(df, var, agr.var, fun){
 	df.low <- df[df$severity == 'low', ]
 	df.mixed <- df[df$severity == 'mixed', ]
 	df.replacement <- df[df$severity == 'replacement', ]
 	sdf <- as.data.frame(get.df(df, var, 'vcc', fun=fun))
-	sdf.low <- as.data.frame(get.df(df.low, var, 'vcc', fun='sum'))
-	sdf.mixed <- as.data.frame(get.df(df.mixed, var, 'vcc', fun='sum'))
-	sdf.replacement <- as.data.frame(get.df(df.replacement, var, 'vcc', fun='sum'))
+	sdf.low <- as.data.frame(get.df(df.low, var, 'vcc', fun=fun))
+	sdf.mixed <- as.data.frame(get.df(df.mixed, var, 'vcc', fun=fun))
+	sdf.replacement <- as.data.frame(get.df(df.replacement, var, 'vcc', fun=fun))
 	sdf.group <- rbind(sdf.low, sdf.mixed, sdf.replacement)
 	sdf.group$severity <- c(rep('low', dim(sdf.low)[1]), rep('mixed', dim(sdf.mixed)[1]), 
 										rep('replacement', dim(sdf.replacement)[1]))
@@ -139,10 +139,23 @@ get.table <- function(df, var, fun){
 			 }  
 		}
 	}
-	data <- mat * rbind(sdf[,'average'], sdf[,'average'],sdf[,'average'])
+	data <- mat * rbind(sdf[,agr.var], sdf[,agr.var],sdf[,agr.var])
 	return(data)
 }
 
 data <- get.table(df, 'beetleAcres', 'sum')
 barplot(data, col=c(1, 2, 4))
 
+plot.vcc.severity <- function(){
+	png(paste0(outpath, "vcc_plots.png"), width=12, height=9, units="in", res=300)
+	par(mfrow=c(3,4),xpd=FALSE,mar=c(3,3,3,0))
+	for(var in plt.vars){
+		if(var == 'SprsCPA'){
+			sdf <- get.table(df.cpa, var, fun=funs[plt.vars==var])
+		}else{
+			sdf <- get.table(df, var, fun=funs[plt.vars==var])
+		}	
+		get.plot(sdf, 'vcc', agr.var=agr.vars[plt.vars==var], plt.titles[plt.vars==var])
+	}
+	dev.off()
+}
