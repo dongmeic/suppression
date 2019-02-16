@@ -5,11 +5,17 @@ library(fmsb)
 library(classInt)
 library(RColorBrewer)
 library(rgdal)
+library(ggplot2)
+library(pvclust)
+library(mclust)
+library(cluster)
+library(fpc)
 
 # csvpath <- "/Users/dongmeichen/Documents/data/ABM/"
 csvpath <- "/Users/dongmeichen/Documents/beetle/data/"
-
 df <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
+
+# check beetle affected acres
 df.forest <- subset(df, forest==1)
 df.beetle <- subset(df,!is.na(beetleAcres))
 par(mfrow=c(1,2),mar=c(3,3,3,0))
@@ -43,14 +49,14 @@ ndf <- data.frame(x=df[,'Pmean'], y=ypred)
 ndf <- ndf[order(ndf$x),]
 plot(ndf$x, ndf$y, pch=16, cex=0.25, col=rgb(0,0,0,0.5), main='Pmean',xlab='',ylab='')
 
-# cluster analysis
+# cluster analysis using all available variables
 drops <- c("lon", "lat", "etopo1", "x", "y", "host", "forest", "GAP1", "GAP2", "GAP3") #, "beetleAcres"
 mydata <- df[,!(names(df) %in% drops)]
 mydata <- subset(mydata, !is.na(beetleAcres) & SprsCPA != Inf & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
          !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
          !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
-mydata <- na.omit(mydata)
-mydata <- scale(mydata)
+mydata.raw <- na.omit(mydata)
+mydata <- scale(mydata.raw)
 # Determine number of clusters
 wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
 for (i in 2:15) wss[i] <- sum(kmeans(mydata,
@@ -58,24 +64,59 @@ for (i in 2:15) wss[i] <- sum(kmeans(mydata,
 plot(1:15, wss, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares") 
 
+# cluster analysis after removing the fire suppression data
+drops <- c("lon", "lat", "etopo1", "x", "y", "host", "forest", "GAP1", "GAP2", "GAP3")
+sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
+drops.more <- c(drops, sprs.vars)
+mydata <- df[,!(names(df) %in% drops.more)]
+mydata <- subset(mydata, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
+                   !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
+                   !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
+mydata.raw <- na.omit(mydata)
+mydata <- scale(mydata.raw)
+
 # K-Means Cluster Analysis
-fit <- kmeans(mydata, 5) # 5 cluster solution
+ncluster <- 3
+fit <- kmeans(mydata, ncluster) # cluster solution
 # get cluster means
 aggregate(mydata,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
-mydata <- data.frame(mydata, fit$cluster) 
+mydata.upated <- data.frame(mydata.raw, fit$cluster) 
+head(mydata.upated)
+# show the fire suppression variables
+plotclr <- brewer.pal(nclr,"Set1") # "#E41A1C" "#377EB8" "#4DAF4A"
+plotclr <- c("#E41A1C", "#4DAF4A")
+#plotclr <- plotclr[nclr:1] # reorder colors
+ylabs <- c('Suppression costs', 'Suppression acres', 'Costs per acre', 'No. fires suppressed',
+            'Percent of fires suppressed', 'Fire size suppressed', 'Containment duration', 'Fire out duration')
+for (var in sprs.vars){
+   ggplot(mydata.upated, aes(x=as.factor(fit.cluster), y=PctSprs, fill=as.factor(fit.cluster)))+
+    scale_fill_manual(values = plotclr) +
+    geom_boxplot()+labs(title='', x="Cluster", y = ylabs[which(vars==var)])+
+    theme_classic() + theme(legend.position="none")
+}
+# without fire suppression variables
+ggplot(mydata.upated, aes(x=as.factor(fit.cluster), y=PctOld, fill=as.factor(fit.cluster)))+
+  scale_fill_manual(values = plotclr) +
+  geom_boxplot()+labs(title='', x="Cluster", y = 'PctOld')+
+  theme_classic() + theme(legend.position="none")
 
 # get coordinate information
+# with fire suppression variables
 data <- subset(df, !is.na(beetleAcres) & SprsCPA != Inf & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
                    !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
                    !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
+# without fire suppression variables
+sdf <- df[,!(names(df) %in% sprs.vars)]
+data <- subset(sdf, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
+                 !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
+                 !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
 data <- na.omit(data)
-data <- cbind(mydata, data[,c("lon", "lat", "etopo1", "x", "y")])
+data <- data.frame(fit$cluster, data[,c("lon", "lat", "etopo1", "x", "y")])
 head(data)
 plotvar <- data$fit.cluster
-nclr <- 5
-plotclr <- brewer.pal(nclr,"Set1")
-#plotclr <- plotclr[nclr:1] # reorder colors
+nclr <- ncluster
+
 class <- classIntervals(plotvar, nclr, style="equal")
 colcode <- findColours(class, plotclr)
 
@@ -86,19 +127,18 @@ proj4string(mpb10km_us_line) <- mpb_projstr
 
 par(mfrow=c(1,1),mar=c(0,0,0,0))
 plot(mpb10km_us_line)
-points(data$x, data$y, pch=16, col=colcode, cex=0.8)
+points(data$x, data$y, pch=16, col=colcode, cex=0.3)
 
 # Ward Hierarchical Clustering
 d <- dist(mydata, method = "euclidean") # distance matrix
 fit <- hclust(d, method="ward.D")
 par(mfrow=c(1,1),mar=c(1,0,2,0))
 plot(fit) # display dendogram
-groups <- cutree(fit, k=5) # cut tree into 5 clusters
-# draw dendogram with red borders around the 5 clusters
-rect.hclust(fit, k=5, border="red") 
+groups <- cutree(fit, k=ncluster) # cut tree into n clusters
+# draw dendogram with red borders around the n clusters
+rect.hclust(fit, k=ncluster, border="red") 
 
 # Ward Hierarchical Clustering with Bootstrapped p values
-library(pvclust)
 fit <- pvclust(mydata, method.hclust="ward.D",
                method.dist="euclidean")
 plot(fit) # dendogram with p values
@@ -106,26 +146,21 @@ plot(fit) # dendogram with p values
 pvrect(fit, alpha=.95) 
 
 # Model Based Clustering
-library(mclust)
 fit <- Mclust(mydata)
-plot(fit) # plot results
+#plot(fit) # plot results
 summary(fit) # display the best model 
 
-# K-Means Clustering with 5 clusters
-fit <- kmeans(mydata, 5)
+# K-Means Clustering with n clusters
+fit <- kmeans(mydata, ncluster)
 
 # Cluster Plot against 1st 2 principal components
 # vary parameters for most readable graph
-library(cluster)
 par(mfrow=c(1,1),mar=c(5,4.5,2,1))
 clusplot(mydata, fit$cluster, color=TRUE, shade=TRUE,
          labels=2, lines=0)
 
 # Centroid Plot against 1st 2 discriminant functions
-library(fpc)
 plotcluster(mydata, fit$cluster)
 
-# comparing 2 cluster solutions
-library(fpc)
-cluster.stats(d, fit1$cluster, fit2$cluster) 
+
 
