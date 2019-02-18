@@ -77,6 +77,9 @@ agr.vars <- c('average', 'mean', 'mean', 'mean', 'median', 'median', 'median', '
 							'median', 'mean', 'mean')
 funs <- c('sum', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'sum', 'mean',
 					'median', 'mean', 'mean')
+#agr.vars <- rep('median', 12)
+#funs <- rep('median', 12)
+
 plot.vcc <- function(){
 	png(paste0(outpath, "vcc_plots.png"), width=12, height=9, units="in", res=300)
 	par(mfrow=c(3,4),xpd=FALSE,mar=c(3,3,3,0))

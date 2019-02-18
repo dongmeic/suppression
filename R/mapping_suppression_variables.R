@@ -178,6 +178,3 @@ p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", al
 png(paste0(out, "fire_severity.png"), width = 8, height = 8, units = "in", res=300)
 print(p)
 dev.off()
-
-
-
