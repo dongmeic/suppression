@@ -10,6 +10,8 @@ library(pvclust)
 library(mclust)
 library(cluster)
 library(fpc)
+library(spgwr)
+library(maptools)
 
 # csvpath <- "/Users/dongmeichen/Documents/data/ABM/"
 csvpath <- "/Users/dongmeichen/Documents/beetle/data/"
@@ -162,5 +164,40 @@ clusplot(mydata, fit$cluster, color=TRUE, shade=TRUE,
 # Centroid Plot against 1st 2 discriminant functions
 plotcluster(mydata, fit$cluster)
 
+# geographically weighted regression
+model1 <- glm(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls, data=mydata.raw, family=gaussian())
+summary(model1)
+plot(model1, which=3)
+resids<-residuals(model1)
+colours <- brewer.pal(4,"Set1")
+map.resids <- SpatialPointsDataFrame(data=data.frame(resids), coords=cbind(data$x,data$y)) 
+spplot(map.resids, cuts=quantile(resids), col.regions=colours, cex=0.3) 
 
+# +density+PctLarge+PctOld+vcc+mfri+prs+pms+pls
+GWRbandwidth <- gwr.sel(beetleAcres^0.07 ~ mStdAge, 
+                        data=mydata.raw, coords=cbind(data$x,data$y),adapt=T)
+gwr.model = gwr(beetleAcres^0.07 ~ mStdAge, 
+                data=mydata.raw, coords=cbind(data$x,data$y), adapt=GWRbandwidth, hatmatrix=TRUE, se.fit=TRUE)
+gwr.model
+mydata.gwr <- cbind(mydata.raw, data[,c('x', 'y')])
+results <- as.data.frame(gwr.model$SDF)
+head(results)
+head(mydata.gwr)
+  
+# mpb10km US lines
+mpb10km_poly <- readShapePoly("/Users/dongmeichen/Documents/beetle/shp/mpb10km.shp")
+mpb10km_lines <- fortify(mpb10km_poly, region="SP_ID")
 
+gwr.point1 <- ggplot(mydata.gwr, aes(x=x,y=y))+geom_point(aes(colour=results$PctOld), size=0.05)+
+  scale_colour_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, space = "rgb", 
+                         na.value = "grey50", guide = "colourbar", guide_legend(title="Coefs"))
+gwr.point1+geom_path(data=mpb10km_lines,aes(long, lat, group=id), colour="grey")+coord_equal()
+
+# using multiple variables
+GWRbandwidth <- gwr.sel(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
+                          vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul, 
+                        data=mydata.raw, coords=cbind(data$x,data$y),adapt=T)
+gwr.model = gwr(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
+                              vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul, 
+                data=as.data.frame(mydata.raw), coords=cbind(data$x,data$y), adapt=GWRbandwidth, 
+                hatmatrix=TRUE, se.fit=TRUE)
