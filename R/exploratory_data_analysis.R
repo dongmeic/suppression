@@ -12,10 +12,52 @@ library(cluster)
 library(fpc)
 library(spgwr)
 library(maptools)
+library(GWmodel)
+library(e1071)
 
 # csvpath <- "/Users/dongmeichen/Documents/data/ABM/"
 csvpath <- "/Users/dongmeichen/Documents/beetle/data/"
 df <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
+
+data <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
+drop <- c('x', 'y', 'SprsCosts', 'SprsAcres')
+#drop <- c('SprsCosts', 'SprsAcres') # run again to get x y
+data <- data[, -which(names(data) %in% drop)]
+head(data)
+
+# vcc values > 6 indicate areas of no vegetation, replace with 0s
+data$vcc[data$vcc > 6] <- 0
+data$prs[data$prs > 20] <- 0
+data$pms[data$pms > 20] <- 0
+data$pls[data$pls > 20] <- 0
+
+# Mean fire return interval where there are no trees is effectively 
+# infinite--set to 22 (> 1000 years)
+data$mfri[data$mfri > 22] <- 0
+
+data$beetleAcres[is.na(data$beetleAcres)] <- 0
+data$mStdAge[is.na(data$mStdAge) & data$forest == 0] <- 0
+data$density[is.na(data$density) & data$forest == 0] <- 0
+data$PctLarge[is.na(data$PctLarge) & data$forest == 0] <- 0
+data$PctOld[is.na(data$PctOld) & data$forest == 0] <- 0
+
+data$SprsCPA[is.na(data$SprsCPA) & data$forest == 0] <- 0
+data$SprsFires[is.na(data$SprsFires) & data$forest == 0] <- 0
+data$PctSprs[is.na(data$PctSprs) & data$forest == 0] <- 0
+data$SprsAcre[is.na(data$SprsAcre) & data$forest == 0] <- 0
+data$SprsDays[is.na(data$SprsDays) & data$forest == 0] <- 0
+data$OutDays[is.na(data$OutDays) & data$forest == 0] <- 0
+
+comp <- data[complete.cases(data), ]
+comp <- comp[is.finite(comp$SprsCPA), ]
+dim(comp)
+# comp <- subset(comp, beetleAcres > 0)
+# xy <- comp[,c("x", "y")]
+
+mydata.raw <- subset(comp, beetleAcres > 0)
+mydata.raw.xy <- cbind(xy, mydata.raw)
+mydata <- data.frame(scale(mydata.raw))
+head(mydata)
 
 # check beetle affected acres
 df.forest <- subset(df, forest==1)
@@ -53,14 +95,19 @@ plot(ndf$x, ndf$y, pch=16, cex=0.25, col=rgb(0,0,0,0.5), main='Pmean',xlab='',yl
 
 # cluster analysis using all available variables
 drops <- c("lon", "lat", "etopo1", "x", "y", "host", "forest", "GAP1", "GAP2", "GAP3") #, "beetleAcres"
+#df$beetleAcres <- log(df$beetleAcres)
 mydata <- df[,!(names(df) %in% drops)]
+mydata <- mydata1
 mydata <- subset(mydata, !is.na(beetleAcres) & SprsCPA != Inf & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
          !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
          !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
 mydata.raw <- na.omit(mydata)
-mydata <- scale(mydata.raw)
+mydata.raw.xy <- mydata.raw
+mydata <- data.frame(scale(mydata.raw))
+
 # Determine number of clusters
 wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+par(mfrow=c(1,1),mar=c(5,4.5,2,1))
 for (i in 2:15) wss[i] <- sum(kmeans(mydata,
                                      centers=i)$withinss)
 plot(1:15, wss, type="b", xlab="Number of Clusters",
@@ -75,10 +122,15 @@ mydata <- subset(mydata, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 
                    !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
                    !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
 mydata.raw <- na.omit(mydata)
-mydata <- scale(mydata.raw)
+mydata <- data.frame(scale(mydata.raw))
+
+# cluster analysis with only fire suppression data
+vgt.vars <- c("mStdAge", "density", "PctLarge", "PctOld", "vcc", "mfri", "prs", "pms", "pls")
+mydata <- df[,(names(df) %in% c('beetleAcres', vgt.vars,sprs.vars))]
+mydata1 <- df[,(names(df) %in% c('x','y','beetleAcres', vgt.vars,sprs.vars))]
 
 # K-Means Cluster Analysis
-ncluster <- 3
+ncluster <- 2
 fit <- kmeans(mydata, ncluster) # cluster solution
 # get cluster means
 aggregate(mydata,by=list(fit$cluster),FUN=mean)
@@ -86,6 +138,7 @@ aggregate(mydata,by=list(fit$cluster),FUN=mean)
 mydata.upated <- data.frame(mydata.raw, fit$cluster) 
 head(mydata.upated)
 # show the fire suppression variables
+nclr <- ncluster
 plotclr <- brewer.pal(nclr,"Set1") # "#E41A1C" "#377EB8" "#4DAF4A"
 plotclr <- c("#E41A1C", "#4DAF4A")
 #plotclr <- plotclr[nclr:1] # reorder colors
@@ -108,17 +161,19 @@ ggplot(mydata.upated, aes(x=as.factor(fit.cluster), y=PctOld, fill=as.factor(fit
 data <- subset(df, !is.na(beetleAcres) & SprsCPA != Inf & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
                    !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
                    !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
+
 # without fire suppression variables
 sdf <- df[,!(names(df) %in% sprs.vars)]
 data <- subset(sdf, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
                  !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
                  !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
+
 data <- na.omit(data)
 data <- data.frame(fit$cluster, data[,c("lon", "lat", "etopo1", "x", "y")])
 head(data)
-plotvar <- data$fit.cluster
-nclr <- ncluster
 
+plotvar <- data$fit.cluster
+plotvar <- fit$cluster
 class <- classIntervals(plotvar, nclr, style="equal")
 colcode <- findColours(class, plotclr)
 
@@ -130,6 +185,7 @@ proj4string(mpb10km_us_line) <- mpb_projstr
 par(mfrow=c(1,1),mar=c(0,0,0,0))
 plot(mpb10km_us_line)
 points(data$x, data$y, pch=16, col=colcode, cex=0.3)
+points(mydata.raw.xy$x, mydata.raw.xy$y, pch=16, col=colcode, cex=0.3)
 
 # Ward Hierarchical Clustering
 d <- dist(mydata, method = "euclidean") # distance matrix
@@ -201,3 +257,49 @@ gwr.model = gwr(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+
                               vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul, 
                 data=as.data.frame(mydata.raw), coords=cbind(data$x,data$y), adapt=GWRbandwidth, 
                 hatmatrix=TRUE, se.fit=TRUE)
+
+# a different method for GWR - from An introduction to R for spatial analysis and mapping
+mydata <- data.frame(mydata.raw, data[,c("lon", "lat", "etopo1", "x", "y")])
+spdf <- SpatialPointsDataFrame(mydata[,c("x", "y")], mydata)
+localstats1 <- gwss(spdf, vars = c("beetleAcres", "mStdAge"), bw=50000)
+head(data.frame(localstats1$SDF))
+
+quick.map <- function(spdf,var,legend.title,main.title) {
+  x <- spdf@data[,var]
+  cut.vals <- pretty(x)
+  x.cut <- cut(x,cut.vals)
+  cut.levels <- levels(x.cut)
+  cut.band <- match(x.cut,cut.levels)
+  colors <- brewer.pal(length(cut.levels),'Reds')
+  par(mar=c(1,1,1,1))
+  plot(mpb10km_us_line,col='grey85')
+  title(main.title)
+  plot(spdf,add=TRUE,col=colors[cut.band],pch=16)
+  legend('topleft',cut.levels,col=colors,pch=16,bty='n',title=legend.title)
+}
+
+quick.map(localstats1$SDF,"beetleAcres_LM",
+          "Beetle affected acres","Geographically Weighted Mean")
+
+par(mfrow=c(1,1))
+quick.map(localstats1$SDF,"Corr_beetleAcres.mStdAge",
+          expression(rho),"Geographically Weighted Pearson Correlation")
+
+localstats2 <- gwss(spdf, vars = c("beetleAcres", "SprsCPA"), bw=50000, quantile = TRUE)
+
+quick.map(localstats2$SDF,"beetleAcres_Median",
+          "Beetle affected acres","Geographically Weighted Median Beetle-affected Acres")
+
+par(mfrow=c(1,2))
+quick.map(localstats2$SDF,"beetleAcres_IQR",
+          "Beetle affected acres","Geographically Weighted Interquartile Range")
+quick.map(localstats2$SDF,"beetleAcres_QI",
+          "Beetle affected acres","Geographically Weighted Quantile Imbalance")
+
+gwr.res <- gwr.basic(beetleAcres~SprsCPA, data=spdf, bw=50000, kernel = 'gaussian')
+gwr.res
+
+# try GLM
+mod <- glm(beetleAcres ~ ., family = gaussian(), data=mydata)
+summary(mod)
+sort(abs(mod$coefficients))
