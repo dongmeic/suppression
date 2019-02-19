@@ -20,7 +20,10 @@ csvpath <- "/Users/dongmeichen/Documents/beetle/data/"
 df <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
 
 data <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
-drop <- c('x', 'y', 'SprsCosts', 'SprsAcres')
+sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
+drop <- c('x', 'y', sprs.vars)
+drop <- sprs.vars
+#drop <- c('x', 'y', 'SprsCosts', 'SprsAcres')
 #drop <- c('SprsCosts', 'SprsAcres') # run again to get x y
 data <- data[, -which(names(data) %in% drop)]
 head(data)
@@ -115,7 +118,6 @@ plot(1:15, wss, type="b", xlab="Number of Clusters",
 
 # cluster analysis after removing the fire suppression data
 drops <- c("lon", "lat", "etopo1", "x", "y", "host", "forest", "GAP1", "GAP2", "GAP3")
-sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
 drops.more <- c(drops, sprs.vars)
 mydata <- df[,!(names(df) %in% drops.more)]
 mydata <- subset(mydata, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
@@ -199,7 +201,7 @@ rect.hclust(fit, k=ncluster, border="red")
 # Ward Hierarchical Clustering with Bootstrapped p values
 fit <- pvclust(mydata, method.hclust="ward.D",
                method.dist="euclidean")
-plot(fit) # dendogram with p values
+plot(fit) # dendrogram with p values
 # add rectangles around groups highly supported by the data
 pvrect(fit, alpha=.95) 
 
