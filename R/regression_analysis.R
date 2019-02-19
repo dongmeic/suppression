@@ -38,6 +38,17 @@ data$SprsAcre[is.na(data$SprsAcre) & data$forest == 0] <- 0
 data$SprsDays[is.na(data$SprsDays) & data$forest == 0] <- 0
 data$OutDays[is.na(data$OutDays) & data$forest == 0] <- 0
 
+# data cleaning method 2
+# vcc values > 6 indicate areas of no vegetation, replace with 0s
+data$vcc[data$vcc > 6] <- NA
+data$prs[data$prs > 20] <- NA
+data$pms[data$pms > 20] <- NA
+data$pls[data$pls > 20] <- NA
+
+# Mean fire return interval where there are no trees is effectively 
+# infinite--set to 22 (> 1000 years)
+data$mfri[data$mfri > 22] <- NA
+
 comp <- data[complete.cases(data), ]
 
 for (field in names(data)) {
@@ -48,7 +59,7 @@ comp <- comp[is.finite(comp$SprsCPA), ]
 dim(comp)
 write.csv(comp, sprintf('%s/mpb10km_data_clean.csv', inpath), row.names=FALSE)
 
-# data cleaning method 2
+# data cleaning method 3
 data <- subset(data, !is.na(beetleAcres) & SprsCPA != Inf & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
          !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
          !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
@@ -56,7 +67,7 @@ comp <- data[complete.cases(data), ]
 dim(comp)
 write.csv(comp, sprintf('%s/mpb10km_data_clean_2.csv', inpath), row.names=FALSE)
 
-# data cleaning method 3
+# data cleaning method 4
 data <- subset(data, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
          !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
          !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
@@ -68,6 +79,7 @@ write.csv(comp, sprintf('%s/mpb10km_data_clean_3.csv', inpath), row.names=FALSE)
 data <- read.csv(sprintf('%s/mpb10km_data_clean.csv', inpath))
 head(data)
 
+#data <- subset(comp, beetleAcres > 0)
 data <- subset(data, beetleAcres > 0)
 head(data)
 par(mfrow=c(2, 2))
@@ -81,6 +93,7 @@ par(mfrow=c(1, 1))
 hist(log(data$SprsCPA + 1))
 data$SprsCPA <- log(data$SprsCPA + 1)
 names(data)[which(names(data) == 'SprsCPA')] <- 'logSprsCPA.p1'
+#comp <- comp[is.finite(comp$logSprsCPA.p1), ]
 
 for (field in names(data)) {
   if (field != 'beetleAcres') {
@@ -111,9 +124,10 @@ smoothed <- c(
   'PctSprs', 'SprsDays', 'OutDays')
 
 out <- '/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/'
-pdf(paste0(out, "suppression_plots_smoothed.pdf"))  
+pdf(paste0(out, "suppression_plots_smoothed_wo.pdf"))  
 par(mfrow=c(3, 3))
-for (field in smoothed) {
+#for (field in smoothed) {
+for (field in smoothed[!(smoothed %in% c('logSprsCPA.p1', sprs.vars))]) {
   plot(log(data$beetleAcres) ~ data[, field], 
        pch=16, cex=0.25,
        col=rgb(0, 0, 0, 0.2),
@@ -129,6 +143,7 @@ for (field in names(data)) {
 }
 
 indata <- data
+indata <- comp
 sq_terms <- c('lon', 'lat', 'etopo1', 'mStdAge', 'density', 'PctLarge', 
 							'prs', 'vpd', 'maxAugT', 'summerP0', 'Tmean', 'mi', 'Tvar', 'wd',
 							'AugMaxT', 'Acs', 'ddAugJul', 'PPT', 'summerP2', 'maxT', 
@@ -136,7 +151,33 @@ sq_terms <- c('lon', 'lat', 'etopo1', 'mStdAge', 'density', 'PctLarge',
 exp_terms <- c('Tmean', 'OctTmin', 'fallTmean', 'TOctSep')
 logp1_terms <- c('vcc', 'mfri', 'Mar20', 'OutDays')
 
+# remove suppression variables
+sq_terms <- c('lon', 'lat', 'etopo1', 'mStdAge', 'density', 'PctLarge', 
+							'prs', 'vpd', 'maxAugT', 'summerP0', 'Tmean', 'mi', 'Tvar', 'wd',
+							'AugMaxT', 'Acs', 'ddAugJul', 'PPT', 'summerP2', 'maxT', 
+							'Pmean', 'summerP1', 'JanMin', 'PcumOctSep')
+exp_terms <- c('Tmean', 'OctTmin', 'fallTmean', 'TOctSep')
+logp1_terms <- c('vcc', 'mfri', 'Mar20')
+
 # without scaling predictors
+mod <- lm(
+  log(beetleAcres) ~ lon + lat + etopo1 
+   	+ host + forest + mStdAge + density 
+    + PctLarge + PctOld + vcc
+    + mfri + prs + pms + pls + GAP1 + GAP2 + GAP3 
+    + vpd + cwd + maxAugT + summerP0 
+    + Tmean + mi + Tvar 
+    + wd + AugTmean
+    + Acs + MarMin + ddAugJun
+  	+ JanTmin + PPT
+    + Jan20 
+    + maxT + Tmin 
+    + winterMin + Pmean 
+		+ logSprsCPA.p1 
+    + SprsFires + PctSprs + SprsAcre 
+    + SprsDays + OutDays,
+  data=data)
+
 mod <- lm(
   log(beetleAcres) ~ lon + I(lon^2) + lat + I(lat^2) + etopo1 
     + I(etopo1^2) + host + forest + mStdAge + I(mStdAge^2) + density 
@@ -155,7 +196,25 @@ mod <- lm(
     + I(logSprsCPA.p1^2) + SprsFires + PctSprs + I(PctSprs^2) + SprsAcre 
     + SprsDays + OutDays + log(OutDays + 1),
   data=data)
+  
+mod <- lm(
+  log(beetleAcres) ~ lon + I(lon^2) + lat + I(lat^2) + etopo1 
+    + I(etopo1^2) + host + forest + mStdAge + I(mStdAge^2) + density 
+    + I(density^2) + PctLarge + I(PctLarge^2) + PctOld + vcc + log(vcc + 1)
+    + mfri + log(mfri+1) + prs + I(prs^2) + pms + pls + GAP1 + GAP2 + GAP3 
+    + vpd + I(vpd^2) + cwd + maxAugT + I(maxAugT^2) + summerP0 
+    + I(summerP0^2) + Tmean + I(Tmean^2) + exp(Tmean) + mi + I(mi^2) + Tvar 
+    + I(Tvar^2) + wd + I(wd^2) + AugTmean + OctTmin + exp(OctTmin) 
+    + AugMaxT + I(AugMaxT^2) + AugTmax + Acs + I(Acs^2) + MarMin + ddAugJun
+    + ddAugJul + I(ddAugJul^2) + JanTmin + PPT + I(PPT^2) + summerP2 
+    + I(summerP2^2) + TMarAug + exp(TMarAug) + Mar20 + log(Mar20 + 1) 
+    + fallTmean + exp(fallTmean) + MarTmin + maxT + I(maxT^2) + Tmin 
+    + winterMin + summerTmean + Pmean + I(Pmean^2) + summerP1 
+    + I(summerP1^2) + minT + JanMin + I(JanMin^2) + TOctSep + exp(TOctSep)
+    + Jan20 + PcumOctSep + I(PcumOctSep^2),
+  data=comp) # data=data
 
+# add transformation
 for(var in sq_terms){
 	varnm <- paste0(var, '_sq')
 	indata[,varnm] <- (indata[,var])^2
@@ -177,7 +236,8 @@ for(var in logp1_terms){
 drop <- "beetleAcres"
 predictors <- indata[ , !(names(indata) %in% drop)]
 predictors <- scale(predictors)
-df <- data.frame(beetleAcres=data[,drop], predictors)
+df <- data.frame(beetleAcres=comp[,drop], predictors)
+#df <- data.frame(beetleAcres=data[,drop], predictors)
 #indata$beetleAcres <- log(indata$beetleAcres)
 #df <- data.frame(scale(indata))
 df$beetleAcres <- log(df$beetleAcres)
@@ -188,23 +248,39 @@ mod <- lm(beetleAcres ~ ., data=df)
 # modeling
 mod.r <- step(mod, trace=0)
 summary(mod.r)
+data <- comp
+data$preds <- mod.r$fitted
 
 par(mfrow=c(2, 2))
 plot(mod.r)
 which(rownames(data) == 6118)
+which(rownames(data) == 8571) # without suppression variables
+#which(rownames(data) == 2505) # remove NA and suppression variables
 mod2 <- update(mod, . ~ ., data=data[-1404, ])
-#mod2 <- update(mod, . ~ ., data=df[-1404, ])
+mod2 <- update(mod, . ~ ., data=data[-3011, ])
+#mod2 <- update(mod, . ~ ., data=comp[-916, ])
 mod2.r <- step(mod2, trace=0)
+
+summary(mod.r)
+par(mfrow=c(2, 2))
+plot(mod.r)
 
 summary(mod2.r)
 par(mfrow=c(2, 2))
 plot(mod2.r)
 
 data <- data[-1404, ]
+data <- data[-3011, ]
+#data <- comp[-916, ]
 #data <- df[-1404, ]
 data$preds <- mod2.r$fitted
+#data$preds <- mod.r$fitted
 
-pdf(paste0(out, "suppression_var_plots.pdf"))
+#pdf(paste0(out, "suppression_var_plots.pdf"))
+#pdf(paste0(out, "suppression_var_plots_wo.pdf"))
+#pdf(paste0(out, "suppression_var_plots_na_omit.pdf"))
+#pdf(paste0(out, "suppression_var_plots_na_omit_wo.pdf"))
+pdf(paste0(out, "suppression_var_plots_test.pdf"))
 par(mfrow=c(3, 3))
 for (field in names(data)) {
   if (field != 'beetleAcres') {
@@ -222,7 +298,11 @@ med.df <- data.frame(t(apply(data, 2, median)))
 n.steps <- 100
 med.df <- med.df[rep(1, n.steps), ]
 
-pdf(paste0(out, "suppression_2D_plots_log.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_log.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_log_wo.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_log_na_omit.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_log_na_omit_wo.pdf"))
+pdf(paste0(out, "suppression_2D_plots_log_test.pdf"))
 par(mfrow=c(3, 3))
 for (field in names(med.df)[!(names(med.df) %in% grep('_', names(med.df), value=T))]) {
   if (!(field %in% c('preds', 'beetleAcres'))) {
@@ -230,7 +310,8 @@ for (field in names(med.df)[!(names(med.df) %in% grep('_', names(med.df), value=
     xmin <- quantile(data[, field], probs=0.025)
     xmax <- quantile(data[, field], probs=0.975)
     test.df[, field] <- seq(xmin, xmax, length=100)
-    preds <- predict(mod2.r, newdata=test.df)
+    #preds <- predict(mod2.r, newdata=test.df)
+    preds <- predict(mod.r, newdata=test.df)
     plot(preds ~ test.df[, field], 
          type='l', 
          xlab=field, 
@@ -239,7 +320,11 @@ for (field in names(med.df)[!(names(med.df) %in% grep('_', names(med.df), value=
 }
 dev.off()
 
-pdf(paste0(out, "suppression_2D_plots.pdf"))
+#pdf(paste0(out, "suppression_2D_plots.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_wo.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_na_omit.pdf"))
+#pdf(paste0(out, "suppression_2D_plots_na_omit_wo.pdf"))
+pdf(paste0(out, "suppression_2D_plots_test.pdf"))
 par(mfrow=c(3, 3))
 for (field in names(med.df)[!(names(med.df) %in% grep('_', names(med.df), value=T))]) {
   if (!(field %in% c('preds', 'beetleAcres'))) {
@@ -247,7 +332,8 @@ for (field in names(med.df)[!(names(med.df) %in% grep('_', names(med.df), value=
     xmin <- quantile(data[, field], probs=0.025)
     xmax <- quantile(data[, field], probs=0.975)
     test.df[, field] <- seq(xmin, xmax, length=100)
-    preds <- exp(predict(mod2.r, newdata=test.df))
+    #preds <- exp(predict(mod2.r, newdata=test.df))
+    preds <- exp(predict(mod.r, newdata=test.df))
     plot(preds ~ test.df[, field], 
          type='l', 
          xlab=field, 
