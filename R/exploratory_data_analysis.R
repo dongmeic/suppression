@@ -23,6 +23,8 @@ data <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
 sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
 drop <- c('x', 'y', sprs.vars)
 drop <- sprs.vars
+drop <- c("lon", "lat", "etopo1", "x", "y", "host", "forest", "SprsCosts", "SprsAcres")
+drop <- c("lon", "lat", "etopo1", "host", "forest", "SprsCosts", "SprsAcres")
 #drop <- c('x', 'y', 'SprsCosts', 'SprsAcres')
 #drop <- c('SprsCosts', 'SprsAcres') # run again to get x y
 data <- data[, -which(names(data) %in% drop)]
@@ -199,11 +201,12 @@ groups <- cutree(fit, k=ncluster) # cut tree into n clusters
 rect.hclust(fit, k=ncluster, border="red") 
 
 # Ward Hierarchical Clustering with Bootstrapped p values
-fit <- pvclust(mydata, method.hclust="ward.D",
-               method.dist="euclidean")
+fit <- pvclust(mydata, method.hclust="ward.D",method.dist="euclidean")
+fit <- pvclust(mydata, method.dist="cor", method.hclust="average", nboot=1000)
 plot(fit) # dendrogram with p values
 # add rectangles around groups highly supported by the data
 pvrect(fit, alpha=.95) 
+seplot(fit)
 
 # Model Based Clustering
 fit <- Mclust(mydata)
@@ -305,3 +308,4 @@ gwr.res
 mod <- glm(beetleAcres ~ ., family = gaussian(), data=mydata)
 summary(mod)
 sort(abs(mod$coefficients))
+sort(mod$coefficients)
