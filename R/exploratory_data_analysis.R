@@ -122,9 +122,10 @@ mydata <- data.frame(scale(mydata.raw))
 
 # Determine number of clusters
 wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+wss <- (nrow(coeffs)-1)*sum(apply(coeffs,2,var))
 par(mfrow=c(1,1),mar=c(5,4.5,2,1))
-for (i in 2:15) wss[i] <- sum(kmeans(mydata,
-                                     centers=i)$withinss)
+for (i in 2:15) wss[i] <- sum(kmeans(mydata,centers=i)$withinss)
+for (i in 2:15) wss[i] <- sum(kmeans(coeffs,centers=i)$withinss)
 plot(1:15, wss, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares") 
 
@@ -133,6 +134,9 @@ drops <- c("lon", "lat", "etopo1", "x", "y", "host", "forest", "GAP1", "GAP2", "
 drops.more <- c(drops, sprs.vars)
 mydata <- df[,!(names(df) %in% drops.more)]
 mydata <- subset(mydata, !is.na(beetleAcres) & !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
+                   !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
+                   !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
+mydata <- subset(comp, !(vcc %in% c(111, 112, 120, 121, 131, 132, 180, 181)) &
                    !(mfri %in% c(111, 112, 131, 132, 133)) & !(prs %in% c(111, 112, 131, 132)) & 
                    !(pms %in% c(111, 112, 131, 132)) & !(pls %in% c(111, 112, 131, 132)))
 mydata.raw <- na.omit(mydata)
@@ -144,16 +148,19 @@ mydata <- df[,(names(df) %in% c('beetleAcres', vgt.vars,sprs.vars))]
 mydata1 <- df[,(names(df) %in% c('x','y','beetleAcres', vgt.vars,sprs.vars))]
 
 # K-Means Cluster Analysis
-ncluster <- 2
+ncluster <- 5
 fit <- kmeans(mydata, ncluster) # cluster solution
+fit <- kmeans(coeffs, ncluster) 
 # get cluster means
 aggregate(mydata,by=list(fit$cluster),FUN=mean)
+aggregate(coeffs,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
-mydata.upated <- data.frame(mydata.raw, fit$cluster) 
+mydata.upated <- data.frame(mydata.raw, fit$cluster)
+coeffs.updated <- data.frame(coeffs, fit$cluster)
 head(mydata.upated)
 # show the fire suppression variables
 nclr <- ncluster
-plotclr <- brewer.pal(nclr,"Set1") # "#E41A1C" "#377EB8" "#4DAF4A"
+plotclr <- brewer.pal(nclr,"Set1") # c("#E41A1C", "#377EB8", "#4DAF4A")
 plotclr <- c("#E41A1C", "#4DAF4A")
 #plotclr <- plotclr[nclr:1] # reorder colors
 ylabs <- c('Suppression costs', 'Suppression acres', 'Costs per acre', 'No. fires suppressed',
@@ -164,6 +171,12 @@ for (var in sprs.vars){
     geom_boxplot()+labs(title='', x="Cluster", y = ylabs[which(vars==var)])+
     theme_classic() + theme(legend.position="none")
 }
+
+ggplot(coeffs.updated, aes(x=as.factor(fit.cluster), y=AugTmean, fill=as.factor(fit.cluster)))+
+  scale_fill_manual(values = plotclr) +
+  geom_boxplot()+labs(title='', x="Cluster", y = 'AugTmean')+
+  theme_classic() + theme(legend.position="none")
+
 # without fire suppression variables
 ggplot(mydata.upated, aes(x=as.factor(fit.cluster), y=PctOld, fill=as.factor(fit.cluster)))+
   scale_fill_manual(values = plotclr) +
@@ -200,6 +213,7 @@ par(mfrow=c(1,1),mar=c(0,0,0,0))
 plot(mpb10km_us_line)
 points(data$x, data$y, pch=16, col=colcode, cex=0.3)
 points(mydata.raw.xy$x, mydata.raw.xy$y, pch=16, col=colcode, cex=0.3)
+points(mydata$x, mydata$y, pch=16, col=colcode, cex=0.3)
 
 # Ward Hierarchical Clustering
 d <- dist(mydata, method = "euclidean") # distance matrix
@@ -256,18 +270,31 @@ head(results)
 head(mydata.gwr)
   
 # mpb10km US lines
-mpb10km_poly <- readShapePoly("/Users/dongmeichen/Documents/beetle/shp/mpb10km.shp")
+mpb10km_poly <- readOGR("/Users/dongmeichen/Documents/beetle/shp", "mpb10km")
 mpb10km_lines <- fortify(mpb10km_poly, region="SP_ID")
 
-gwr.point1 <- ggplot(mydata.gwr, aes(x=x,y=y))+geom_point(aes(colour=results$PctOld), size=0.05)+
+gwr.point1 <- ggplot(mydata, aes(x=x,y=y))+geom_point(aes(colour=mydata$wd), size=0.05)+
   scale_colour_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, space = "rgb", 
-                         na.value = "grey50", guide = "colourbar", guide_legend(title="Coefs"))
+                         na.value = "grey50", guide = "colourbar", guide_legend(title="wd"))
 gwr.point1+geom_path(data=mpb10km_lines,aes(long, lat, group=id), colour="grey")+coord_equal()
+
+# cluster analysis on the coefficients?
+coeffs <- results[,3:19]
 
 # using multiple variables
 GWRbandwidth <- gwr.sel(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
                           vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul, 
-                        data=mydata.raw, coords=cbind(data$x,data$y),adapt=T)
+                        data=mydata.raw, coords=cbind(data$x,data$y), adapt=T)
+
+GWRbandwidth <- gwr.sel(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
+                          Tmean+vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul+Jan20+maxAugT+cwd, 
+                        data=mydata, coords=cbind(mydata$x,mydata$y), adapt=T)
+
+gwr.model = gwr(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
+                  vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul+Jan20, 
+                data=mydata, coords=cbind(mydata$x, mydata$y), adapt=GWRbandwidth, 
+                hatmatrix=TRUE, se.fit=TRUE)
+
 gwr.model = gwr(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
                               vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul, 
                 data=as.data.frame(mydata.raw), coords=cbind(data$x,data$y), adapt=GWRbandwidth, 
