@@ -159,7 +159,7 @@ sq_terms <- c('lon', 'lat', 'etopo1', 'mStdAge', 'density', 'PctLarge',
 exp_terms <- c('Tmean', 'OctTmin', 'fallTmean', 'TOctSep')
 logp1_terms <- c('vcc', 'mfri', 'Mar20')
 
-# without scaling predictors
+# select variables
 mod <- lm(
   log(beetleAcres) ~ lon + lat + etopo1 
    	+ host + forest + mStdAge + density 
@@ -178,6 +178,7 @@ mod <- lm(
     + SprsDays + OutDays,
   data=data)
 
+# without scaling predictors
 mod <- lm(
   log(beetleAcres) ~ lon + I(lon^2) + lat + I(lat^2) + etopo1 
     + I(etopo1^2) + host + forest + mStdAge + I(mStdAge^2) + density 
