@@ -23,6 +23,15 @@ points(fpa.spdf, pch=16, col="red", cex=0.2)
 plot(mpb10km, border="dimgray", add=TRUE)
 dev.off()
 
+# get coordinates by ICS_209_INCIDENT_NUMBER
+fpafod.coordinates <- aggregate(cbind(LONGITUDE, LATITUDE, FIRE_YEAR, STATE) ~ ICS_209_INCIDENT_NUMBER, data = rds@data, 
+																function(x) names(sort(-table(x)))[1], na.action = na.omit)
+
+# plot to check the coordinates
+mpb10km.lonlat <- spTransform(mpb10km, lonlat)
+plot(mpb10km.lonlat)
+points(fpafod.coordinates$LONGITUDE, fpafod.coordinates$LATITUDE, pch=16, cex=0.5)
+
 # SIT-209
 # Combine yearly data
 # Information needed: coordinates, start and containment dates, fire suppression cost, and burned area
@@ -60,16 +69,27 @@ merge$Year <- as.numeric(as.character(merge$Year))
 print(paste("SIT-209 has", length(merge$SITID), "records during", range(merge$Year)[1], "and",range(merge$Year)[2],"in raw data where percent containment is 100!"))
 # "SIT-209 has 104400 records during 1999 and 2016 in raw data where percent containment is 100!"
 # write.csv(merge, paste0(fire.path,"ics-209.csv"), row.names = FALSE)
-icsdata.a <- aggregate(cbind(Longitude, Latitude, Year, State) ~ SITID, data = merge, mode)
+icsdata.a <- aggregate(cbind(Longitude, Latitude, Year, State) ~ SITID, data = merge, function(x) names(sort(-table(x)))[1], na.action = na.omit)
 icsdata.b <- aggregate(cbind(Costs, Acres) ~ SITID, data = merge, max, na.action = na.omit)
 icsdata.c <- aggregate(StartDate ~ SITID, data=merge, function(x) min(as.Date(x, format = "%m/%d/%Y")))
 icsdata.d <- aggregate(EndDate ~ SITID, data=merge, function(x) max(as.Date(x, format = "%m/%d/%Y")))
+
 icsdata.1 <- merge(icsdata.a, icsdata.b, by = "SITID", all=TRUE)
 icsdata.2 <- merge(icsdata.c, icsdata.d, by = "SITID", all=TRUE)
 icsdata.3 <- merge(icsdata.1, icsdata.2, by = "SITID", all=TRUE)
 print(paste("SIT-209 has ", toString(length(icsdata.3[icsdata.3$Longitude==0,]$Longitude)+length(icsdata.3[icsdata.3$Longitude>0,]$Longitude)), " erroneous location in ", toString(length(icsdata.3$SITID)), " records.", sep=""))
 # "SIT-209 has 19879 erroneous location in 23691 records."
 icsdata.3$Longitude <- with(icsdata.3, ifelse(Longitude < 0, Longitude, -(as.numeric(Longitude))))
+# 852/23691
+
+# use the Short data to correct longitude and latitude
+plot(mpb10km.lonlat)
+points(icsdata.3$Longitude, icsdata.3$Latitude, pch=16, cex=0.5)
+
+colnames(fpafod.coordinates)[which(colnames(fpafod.coordinates)=="ICS_209_INCIDENT_NUMBER")] <- "SITID"
+coordinates.df <- merge(icsdata.3, fpafod.coordinates, by = "SITID", all=TRUE)
+write.csv(coordinates.df, '/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/icsdata_coordinates.csv', row.names = FALSE)
+
 # create a table retain unique records with fire suppression costs
 icsdata.n <- icsdata.3
 icsdata.n1 <- icsdata.n[!is.na(as.numeric(icsdata.n$Costs)) & icsdata.n$Costs >= 100,]
