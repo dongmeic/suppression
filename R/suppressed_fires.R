@@ -117,9 +117,13 @@ sit209$Costs <- ifelse(sit209$Acres > gridacre, sit209$Costs/sit209$Acres * grid
 sit209$Acres <- ifelse(sit209$Acres > gridacre, gridacre, sit209$Acres)
 sit209$LogCost <- log(sit209$Costs)
 logCost <- rasterized(sit209, "LogCost", median)
-costs <- rasterized(sit209, "Costs", median)
-acres <- rasterized(sit209, "Acres", median)
-CostPerAcre <- costs/acres
+#costs <- rasterized(sit209, "Costs", median)
+costs <- rasterized(sit209.spdf, "Costs", median)
+#acres <- rasterized(sit209, "Acres", median)
+acres <- rasterized(sit209.spdf, "Acres", median)
+sit209.spdf$CostPerAcre <- sit209.spdf$Costs / sit209.spdf$Acres
+#CostPerAcre <- costs/acres
+CostPerAcre <- rasterized(sit209.spdf, "CostPerAcre", median)
 par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
 ncls <- 5
 cols <- "Reds"
