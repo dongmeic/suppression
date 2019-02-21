@@ -16,9 +16,19 @@ library(GWmodel)
 library(e1071)
 
 # csvpath <- "/Users/dongmeichen/Documents/data/ABM/"
-csvpath <- "/Users/dongmeichen/Documents/beetle/data/"
-df <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
+if(grepl('gpfs', getwd())){
+	csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
+}else{
+	csvpath <- "/Users/dongmeichen/Documents/beetle/data/"
+}
 
+df <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
+# sprs_costs <- read.csv(paste0(csvpath, "suppressed_costs.csv")) # updated after correcting coordinates with the Short data
+# data$SprsCosts <- ifelse(is.na(data$SprsCosts) & !is.na(sprs_costs$SprsCosts), sprs_costs$SprsCosts, data$SprsCosts)
+# data$SprsAcres <- ifelse(is.na(data$SprsAcres) & !is.na(sprs_costs$SprsAcres), sprs_costs$SprsAcres, data$SprsAcres)
+# data$SprsCPA <- ifelse(is.na(data$SprsCPA) & !is.na(sprs_costs$SprsCPA), sprs_costs$SprsCPA, data$SprsCPA)
+# sprs_costs_0 <- read.csv(paste0(csvpath, "suppressed_costs_0.csv"))
+# write.csv(data, paste0(csvpath, "mpb10km_data.csv"), row.names=FALSE) # update suppression costs
 data <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
 sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
 drop <- c('x', 'y', sprs.vars)

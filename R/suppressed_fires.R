@@ -121,9 +121,11 @@ logCost <- rasterized(sit209, "LogCost", median)
 costs <- rasterized(sit209.spdf, "Costs", median)
 #acres <- rasterized(sit209, "Acres", median)
 acres <- rasterized(sit209.spdf, "Acres", median)
+sit209$CostPerAcre <- sit209$Costs / sit209$Acres
 sit209.spdf$CostPerAcre <- sit209.spdf$Costs / sit209.spdf$Acres
 #CostPerAcre <- costs/acres
 CostPerAcre <- rasterized(sit209.spdf, "CostPerAcre", median)
+#CostPerAcre <- rasterized(sit209, "CostPerAcre", median)
 par(mfrow=c(1,1),xpd=FALSE,mar=c(2,2,2,3))
 ncls <- 5
 cols <- "Reds"
