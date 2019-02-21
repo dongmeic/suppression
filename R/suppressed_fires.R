@@ -25,7 +25,28 @@ fwfod.c.s <- fwfod.c[!is.na(fwfod.c$FIRETYPE) & fwfod.c$FIRETYPE == "1",]
 fwfod.n <- fwfod[!is.na(fwfod$CAUSE) & fwfod$CAUSE == "Natural",]
 # select suppressed fires
 fwfod.n.s <- fwfod.n[!is.na(fwfod.n$FIRETYPE) & fwfod.n$FIRETYPE == "1",]
-sit209 <- readOGR(dsn=fire.path, layer="sit_westus", stringsAsFactors = FALSE)
+# sit209 <- readOGR(dsn=fire.path, layer="sit_westus", stringsAsFactors = FALSE)
+sit209.df <- read.csv('/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/icsdata_coordinates.csv')
+sit209.df$LONGITUDE <- ifelse(is.na(sit209.df$LONGITUDE) & !is.na(sit209.df$Longitude), sit209.df$Longitude, sit209.df$LONGITUDE)
+sit209.df$LATITUDE <- ifelse(is.na(sit209.df$LATITUDE) & !is.na(sit209.df$Latitude), sit209.df$Latitude, sit209.df$LATITUDE)
+sit209.df <- sit209.df[!is.na(sit209.df$LONGITUDE) & !is.na(sit209.df$LATITUDE),]
+
+sit209.spdf <- df2spdf(10, 11, 'LONGITUDE', 'LATITUDE', sit209.df)
+sit209.spdf <- sit209.spdf[!is.na(over(sit209.spdf, as(mpb10km, "SpatialPolygons"))),]
+
+plot(mpb10km.lonlat)
+points(sit209.df$LONGITUDE, sit209.df$LATITUDE, pch=16, cex=0.5, col='red')
+sit209.df <- sit209.df[sit209.df$LONGITUDE > -125 & sit209.df$LONGITUDE < -66 
+                           & sit209.df$LATITUDE > 24 & sit209.df$LATITUDE < 50, ] 
+
+# remove NA values?                           
+sit209.df.na <- sit209.df[(is.na(sit209.df$LONGITUDE) | is.na(sit209.df$LATITUDE)),]
+#dim(sit209.df.na)
+#[1] 6652   13
+sit209.df.na.na <- sit209.df.na[(is.na(sit209.df.na$Longitude) | is.na(sit209.df.na$Latitude)),]
+#dim(sit209.df.na.na)
+#[1] 126  13
+
 png(paste0(out,"fpafod_fwfod.png"), width = 10, height = 8, units = "in", res=300)
 par(mfrow=c(1,2),xpd=FALSE,mar=c(0,0,2,0))
 plot(mpb10km, border="black", main="FW-FOD fire records in the western US")
