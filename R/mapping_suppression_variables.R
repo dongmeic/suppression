@@ -6,14 +6,34 @@ source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R"
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
 out <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/maps/"
 indata <- read.csv(paste0(csvpath, 'mpb10km_data.csv'))
-df <- subset(indata, !is.na(beetleAcres))
+#df <- subset(indata, !is.na(beetleAcres))
 
-df$vcc[df$vcc > 6] <- 0
-df$prs[df$prs > 20] <- 0
-df$pms[df$pms > 20] <- 0
-df$pls[df$pls > 20] <- 0
-df$mfri[df$mfri > 22] <- 0
+# vcc values > 6 indicate areas of no vegetation, replace with 0s
+indata$vcc[indata$vcc > 6] <- 0
+indata$prs[indata$prs > 20] <- 0
+indata$pms[indata$pms > 20] <- 0
+indata$pls[indata$pls > 20] <- 0
 
+# Mean fire return interval where there are no trees is effectively 
+# infinite--set to 22 (> 1000 years)
+indata$mfri[indata$mfri > 22] <- 0
+
+indata$beetleAcres[is.na(indata$beetleAcres)] <- 0
+indata$mStdAge[is.na(indata$mStdAge) & indata$forest == 0] <- 0
+indata$density[is.na(indata$density) & indata$forest == 0] <- 0
+indata$PctLarge[is.na(indata$PctLarge) & indata$forest == 0] <- 0
+indata$PctOld[is.na(indata$PctOld) & indata$forest == 0] <- 0
+
+indata$SprsCosts[is.na(indata$SprsCosts) & indata$forest == 0] <- 0
+indata$SprsAcres[is.na(indata$SprsAcres) & indata$forest == 0] <- 0
+indata$SprsCPA[is.na(indata$SprsCPA) & indata$forest == 0] <- 0
+indata$SprsFires[is.na(indata$SprsFires) & indata$forest == 0] <- 0
+indata$PctSprs[is.na(indata$PctSprs) & indata$forest == 0] <- 0
+indata$SprsAcre[is.na(indata$SprsAcre) & indata$forest == 0] <- 0
+indata$SprsDays[is.na(indata$SprsDays) & indata$forest == 0] <- 0
+indata$OutDays[is.na(indata$OutDays) & indata$forest == 0] <- 0
+
+df <- subset(indata, beetleAcres > 0)
 spdf <- df2spdf(1, 2, 'lon', 'lat', df)
 
 mapping.LF <- function(shp, var){	
@@ -108,7 +128,7 @@ titles <- c('Stand age (Years)', 'Tree density (No. trees per acre)', 'Ratio of 
 						'Ratio of old trees', 'MPB core host presence', 'Beetle affected acres')
 pos <- cbind(c(1,1),c(1,2),c(1,3),
 						 c(2,1),c(2,2),c(2,3))
-png(paste0(out,'stand_variable_maps.png'), width=12, height=8, units="in", res=300)
+png(paste0(out,'stand_variable_maps_0.png'), width=12, height=8, units="in", res=300)
 par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
 for(var in vars){
 	if(var != 'beetleAcres'){
@@ -123,7 +143,7 @@ dev.off()
 
 # fire regime maps
 vars <- c("vcc", "mfri", "prs", "pms", "pls", 'beetleAcres')
-png(paste0(out,'fire_regime_variable_maps.png'), width=12, height=8, units="in", res=300)
+png(paste0(out,'fire_regime_variable_maps_0.png'), width=12, height=8, units="in", res=300)
 par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
 for(var in vars){
 	if(var != 'beetleAcres'){
@@ -146,7 +166,7 @@ pos <- cbind(c(1,1),c(1,2),c(1,3),
 						 c(2,1),c(2,2),c(2,3),
 						 c(3,1),c(3,2),c(3,3))
 						 
-png(paste0(out,'suppression_variable_maps.png'), width=12, height=12, units="in", res=300)
+png(paste0(out,'suppression_variable_maps_0.png'), width=12, height=12, units="in", res=300)
 par(mfrow=c(3,3), xpd=FALSE, mar=rep(0.5,4))
 for(var in vars){
 	if(var != 'beetleAcres'){
@@ -175,6 +195,6 @@ title <- "Fire severity"
 p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
 				scales = list(draw = FALSE), margin=F, main=title)
 p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
-png(paste0(out, "fire_severity.png"), width = 8, height = 8, units = "in", res=300)
+png(paste0(out, "fire_severity_0.png"), width = 8, height = 8, units = "in", res=300)
 print(p)
 dev.off()
