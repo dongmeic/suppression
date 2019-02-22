@@ -33,6 +33,9 @@ indata$SprsAcre[is.na(indata$SprsAcre) & indata$forest == 0] <- 0
 indata$SprsDays[is.na(indata$SprsDays) & indata$forest == 0] <- 0
 indata$OutDays[is.na(indata$OutDays) & indata$forest == 0] <- 0
 
+GAPs <- read.csv(paste0(csvpath, 'mpb10km_GAPs.csv'))
+indata <- cbind(indata, GAPs)
+indata$GAPs[is.na(indata$GAPs) & indata$forest == 0] <- 0
 df <- subset(indata, beetleAcres > 0)
 spdf <- df2spdf(1, 2, 'lon', 'lat', df)
 
@@ -100,11 +103,11 @@ mapping.btl <- function(shp, var, title='MPB affected acres', cols="YlOrRd"){
 	return(p)
 }
 
-mapping.host <- function(shp, var, title, cols="PuBuGn"){
+mapping.tree <- function(shp, var, title, cols="PuBuGn"){
 	r <- rasterize(shp, mpb10km.pts.r, var, fun=mean, na.rm=TRUE)
 	ncls <- 6
 	brks <- getJenksBreaks(getValues(r), ncls)
-	if(var=='host'){
+	if(var == 'host' | var == 'forest'){
 		labels <- c("No", "Yes")
 		cols <- c("#d0d1e6", "#016c59")
 		r <- as.factor(r)
@@ -121,6 +124,19 @@ mapping.host <- function(shp, var, title, cols="PuBuGn"){
 	return(p)
 }
 
+mapping.GAPs <- function(shp, var, title){
+	r <- rasterize(shp, mpb10km.pts.r, var, fun=mean, na.rm=TRUE)
+	r <- as.factor(r)
+	rat <- levels(r)[[1]]
+	rat[["labels"]] <- c('0', '1', '2', '3', '4')
+	levels(r) <- rat
+	p <- levelplot(r, col.regions=c('Grey', brewer.pal(4,'Set1')), xlab="", ylab="",
+						par.settings = list(axis.line = list(col = "transparent")), 
+						scales = list(draw = FALSE), margin=F, main=title)
+	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+	return(p)
+}
+
 # output figures
 # tree maps
 vars <- c("mStdAge", "density", "PctLarge", "PctOld", "host", 'beetleAcres')
@@ -132,7 +148,7 @@ png(paste0(out,'stand_variable_maps_0.png'), width=12, height=8, units="in", res
 par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
 for(var in vars){
 	if(var != 'beetleAcres'){
-		p <- mapping.host(spdf, var, titles[which(vars==var)])
+		p <- mapping.tree(spdf, var, titles[which(vars==var)])
 	}else{
 		p <- mapping.btl(spdf, var)
 	}
@@ -184,19 +200,77 @@ df$severity <- ifelse(df$prs >= 17 & df$mfri >= 16, 'replacement', ifelse(df$pls
 df$severity.no <- ifelse(df$severity == 'replacement', 3, ifelse(df$severity == 'low', 1, 2))
 spdf <- df2spdf(1, 2, 'lon', 'lat', df)
 
-labels <- c("Low", "Mixed", "Replacement")
-cols <- c("#e41a1c", "#4daf4a", "#377eb8")
-r <- rasterize(spdf, mpb10km.pts.r, "severity.no", fun=mean, na.rm=TRUE)
-r <- as.factor(r)
-rat <- levels(r)[[1]]
-rat[["labels"]] <- labels
-levels(r) <- rat
-title <- "Fire severity"
-p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
-				scales = list(draw = FALSE), margin=F, main=title)
-p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+mapping.severity <- function(){
+	labels <- c("L", "M", "R")
+	cols <- c("#e41a1c", "#4daf4a", "#377eb8")
+	r <- rasterize(spdf, mpb10km.pts.r, "severity.no", fun=mean, na.rm=TRUE)
+	r <- as.factor(r)
+	rat <- levels(r)[[1]]
+	rat[["labels"]] <- labels
+	levels(r) <- rat
+	title <- "Fire severity"
+	p <- levelplot(r, col.regions=cols, xlab="", ylab="",par.settings = list(axis.line = list(col = "transparent")), 
+					scales = list(draw = FALSE), margin=F, main=title)
+	p <- p + latticeExtra::layer(sp.polygons(mpb10km, lwd=0.5, col=alpha("black", alpha = 0.6)))
+	return(p)
+}
+
 png(paste0(out, "fire_severity_0.png"), width = 8, height = 8, units = "in", res=300)
-print(p)
+#print(p)
+mapping.severity()
 dev.off()
 
 # reorganize the plots
+# tree maps
+vars <- c("mStdAge", "density", "PctLarge", "PctOld", "forest", 'GAPs')
+titles <- c('Stand age (Years)', 'Tree density (No. trees per acre)', 'Ratio of large trees', 
+						'Ratio of old trees', 'Forested area', 'GAP status')
+pos <- cbind(c(1,1),c(1,2),c(1,3),
+						 c(2,1),c(2,2),c(2,3))
+png(paste0(out,'stand_variable_maps_0.png'), width=12, height=8, units="in", res=300)
+par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
+for(var in vars){
+	if(var != 'GAPs'){
+		p <- mapping.tree(spdf, var, titles[which(vars==var)])
+	}else{
+		p <- mapping.GAPs(spdf, var, 'GAP status')
+	}
+	print(p,split=c(pos[,which(vars==var)][2], pos[,which(vars==var)][1], 3, 2), newpage=FALSE) 
+	print(var)
+}
+dev.off()
+
+# fire regime maps
+vars <- c("vcc", "mfri", "prs", "pms", "pls", "severity.no")
+pos <- cbind(c(1,1),c(1,2),c(1,3),
+						 c(2,1),c(2,2),c(2,3))
+png(paste0(out,'fire_regime_variable_maps_0.png'), width=12, height=8, units="in", res=300)
+par(mfrow=c(2,3), xpd=FALSE, mar=rep(0.5,4))
+for(var in vars){
+	if(var != 'severity.no'){
+		p <- mapping.LF(spdf, var)
+	}else{
+		p <- mapping.severity()
+	}
+	print(p,split=c(pos[,which(vars==var)][2], pos[,which(vars==var)][1], 3, 2), newpage=FALSE) 
+	print(var)
+}
+dev.off()
+# fire data maps
+vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 
+					'SprsAcre', 'SprsDays', 'OutDays')
+titles <- c('Suppression costs ($)', 'Suppression acres', 'Suppression costs per acre ($)', 
+						'No. of fires suppressed', 'Ratio of suppressed fires',
+						'Mean fire size (Acres)', 'Containment duration (Days)', 'Fire out duration (Days)')
+
+pos <- cbind(c(1,1),c(1,2),c(1,3),c(1,4),
+						 c(2,1),c(2,2),c(2,3),c(2,4))
+						 
+png(paste0(out,'suppression_variable_maps_0.png'), width=12, height=6, units="in", res=300)
+par(mfrow=c(2,4), xpd=FALSE, mar=rep(0.5,4))
+for(var in vars){
+	p <- mapping.sprs(spdf, var, titles[which(vars==var)])
+	print(p,split=c(pos[,which(vars==var)][2], pos[,which(vars==var)][1], 4, 2), newpage=FALSE) 
+	print(var)
+}
+dev.off()

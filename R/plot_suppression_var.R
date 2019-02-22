@@ -4,7 +4,11 @@ library(dplyr)
 library(RColorBrewer)
 
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
-df <- read.csv(paste0(csvpath,"mpb10km_with_beetle_data.csv"))
+df <- read.csv(paste0(csvpath,"mpb10km_with_beetle_data.csv")) # updated from exploratory_data_analysis.R
+df <- df[complete.cases(df), ]
+df$severity <- ifelse(df$prs >= 17 & df$mfri >= 16, 'replacement', ifelse(df$pls >= 17 & df$mfri <= 4, 'low', 'mixed'))
+df$severity.no <- ifelse(df$severity == 'replacement', 3, ifelse(df$severity == 'low', 1, 2))
+
 sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 
 					'SprsAcre', 'SprsDays', 'OutDays')
 outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
@@ -21,7 +25,7 @@ get.df <- function(df, var1, var2, fun){
 	}else if(var2 == 'severity.no'){
 		cond <- paste0(var2, ' %in% c(1:3)')
 	}
-	strings <- paste0('df %>% subset(forest==1 & ', cond, ') %>% dplyr::select(')
+	strings <- paste0('df %>% subset(', cond, ') %>% dplyr::select(') # forest==1 & 
 	strings <- paste0(strings, var2, ',', var1, ') %>% group_by(', var2)
 	strings <- paste0(strings,  ') %>% summarise(', fun, '=', fun, '(', var1)
 	strings <- paste0(strings, ', na.rm=TRUE), grids = sum(!is.na(', var1)
@@ -41,7 +45,6 @@ lf.vars <- c('vcc', 'mfri', 'prs', 'pms', 'pls', 'severity.no')
 titles <- c('Vegetation condition class', 'Mean fire return interval', 'Percent of replacement-severity fires',
 						'Percent of mixed-severity fires', 'Percent of low-severity fires', 'Fire severity')
 
-outpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/plots/"
 get.plot <- function(df, var, agr.var, title){
 	strings <- paste0('barplot(df$', agr.var, ', names.arg = data.frame(df)[,var], main = title, cex.names = 1.5, cex.lab=1.5, cex.axis=1.5, cex.main=2)')
 	eval(parse(text=strings))
@@ -73,12 +76,12 @@ sprs.titles <- c('Suppression costs', 'Suppression acres', 'Unit suppression cos
 								 'No. fires suppressed', 'Ratio of fires suppressed', 'Fire size suppressed',
 								 'Containment duration', 'Fire out duration')
 plt.titles <- c('MPB affected acres', 'Stand age', 'Tree density', 'Ratio of old trees', sprs.titles)
-agr.vars <- c('average', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'average', 'mean',
+#agr.vars <- c('average', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'average', 'mean',
 							'median', 'mean', 'mean')
-funs <- c('sum', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'sum', 'mean',
+#funs <- c('sum', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'sum', 'mean',
 					'median', 'mean', 'mean')
-#agr.vars <- rep('median', 12)
-#funs <- rep('median', 12)
+agr.vars <- rep('average', 12)
+funs <- rep('sum', 12)
 
 plot.vcc <- function(){
 	png(paste0(outpath, "vcc_plots.png"), width=12, height=9, units="in", res=300)
@@ -118,8 +121,8 @@ roadless.t <- rasterized(roadless.shp, "roadless", roadless)
 
 # vegetation condition class with fire severity
 
-var <- 'beetleAcres'
-fun <- 'sum'
+#var <- 'beetleAcres'
+#fun <- 'sum'
 get.table <- function(df, var, agr.var, fun){
 	df.low <- df[df$severity == 'low', ]
 	df.mixed <- df[df$severity == 'mixed', ]
