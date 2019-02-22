@@ -32,8 +32,14 @@ LCdf <- landcover@data[,9:10]
 colnames(LCdf)[1] <- "type"
 write.csv(LCdf, paste0(csvpath, "mpb10km_forested_area.csv"), row.names=FALSE)
 gap <- readOGR(dsn=path, layer="mpb10km_fire_protection", stringsAsFactors = FALSE)
-GAPdf <- gap@data[,4:9]
-write.csv(GAPdf, paste0(csvpath, "mpb10km_forest_protection.csv"), row.names=FALSE)
+gap.r <- rasterized(gap, 'GAPs', min)
+wilderness.r <- rasterized(gap, 'wilderness', min)
+gap.status <- data.frame(GAPs=extract(gap.r, mpb10km.pt, method='simple'))
+wilderness <- data.frame(wilderness=extract(wilderness.r, mpb10km.pt, method='simple'))
+#GAPdf <- gap@data[,4:9]
+GAPdf <- cbind(gap.status, wilderness)
+#write.csv(GAPdf, paste0(csvpath, "mpb10km_forest_protection.csv"), row.names=FALSE)
+write.csv(GAPdf, paste0(csvpath, "mpb10km_GAPs.csv"), row.names=FALSE)
 
 # tree density and stand age; FIA
 stand_age <- readOGR(dsn = paste0(path, "/mpb10km"), layer = "stand_age")

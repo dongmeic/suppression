@@ -117,7 +117,7 @@ for (i in 2:n){
                      "/", statecode[i], "_TREE.csv", sep="")
   tree.table <- read.csv(tree.file)
   tree.size <- aggregate(DIA ~ PLT_CN, data = tree.table, mean)
-  tree.plrg <- aggregate(DIA ~ PLT_CN, data = tree.table, function(x) count.tree(x,8))
+  tree.plrg <- aggregate(DIA ~ PLT_CN, data = tree.table, function(x) count.tree(x,12))
   if (length(na.omit(tree.table$BHAGE)) != 0){
     tree.pold <- aggregate(BHAGE ~ PLT_CN, data = tree.table, function(x) count.tree(x,80))
   } else {

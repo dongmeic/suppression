@@ -28,7 +28,9 @@ df <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
 # data$SprsAcres <- ifelse(is.na(data$SprsAcres) & !is.na(sprs_costs$SprsAcres), sprs_costs$SprsAcres, data$SprsAcres)
 # data$SprsCPA <- ifelse(is.na(data$SprsCPA) & !is.na(sprs_costs$SprsCPA), sprs_costs$SprsCPA, data$SprsCPA)
 # sprs_costs_0 <- read.csv(paste0(csvpath, "suppressed_costs_0.csv"))
-# write.csv(data, paste0(csvpath, "mpb10km_data.csv"), row.names=FALSE) # update suppression costs
+# write.csv(data, paste0(csvpath, "mpb10km_data.csv"), row.names=FALSE) # update suppression costs # update percent of large trees
+# stand_vars <- read.csv(paste0(csvpath, "stand_age_mean.csv"))
+# data[,c('mStdAge', 'PctLarge', 'PctOld')] <- stand_vars[,c('mStdAge', 'PctLarge', 'PctOld')]
 data <- read.csv(paste0(csvpath, "mpb10km_data.csv"))
 sprs.vars <- c('SprsCosts', 'SprsAcres', 'SprsCPA', 'SprsFires', 'PctSprs', 'SprsAcre', 'SprsDays', 'OutDays')
 drop <- c('x', 'y', sprs.vars)
