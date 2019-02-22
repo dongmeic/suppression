@@ -287,8 +287,8 @@ GWRbandwidth <- gwr.sel(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+m
                         data=mydata.raw, coords=cbind(data$x,data$y), adapt=T)
 
 GWRbandwidth <- gwr.sel(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
-                          Tmean+vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul+Jan20+maxAugT+cwd, 
-                        data=mydata, coords=cbind(mydata$x,mydata$y), adapt=T)
+                          vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul+Jan20, 
+                        data=mydata, coords=cbind(mydata$x,mydata$y), adapt=T) #Tmean+maxAugT+cwd
 
 gwr.model = gwr(beetleAcres^0.07 ~ mStdAge+density+PctLarge+PctOld+vcc+mfri+prs+pms+pls+
                   vpd+summerP0+wd+AugTmean+Tvar+JanTmin+ddAugJul+Jan20, 
