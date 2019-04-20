@@ -13,7 +13,7 @@ for(v in vars){
 	colnames(df)[2] <- 'var'
 	GWRbandwidth <- gwr.sel(log(beetleAcres) ~ var, data=df, coords=cbind(xy$x,xy$y), adapt=T)
 	gwr.model <- gwr(log(beetleAcres) ~ var, data=df, coords=cbind(xy$x, xy$y), 
-									 bandwidth=GWRbandwidth, adapt=T, hatmatrix=TRUE, se.fit=TRUE)
+									 adapt=GWRbandwidth, hatmatrix=TRUE, se.fit=TRUE)
 	
 	sink(sprintf('%s/gwr_model_results_%s.txt', ROOT, v))
 	gwr.model

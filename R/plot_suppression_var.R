@@ -73,7 +73,7 @@ plot.lf(df=df.cpa, plotvar = 'SprsCPA', agr.var = 'median', fun='median')
 
 plt.vars <- c('beetleAcres', 'mStdAge', 'density', 'PctOld', sprs.vars)
 sprs.titles <- c('Suppression costs', 'Suppression acres', 'Unit suppression costs',
-								 'No. fires suppressed', 'Ratio of fires suppressed', 'Fire size suppressed',
+								 'No. suppressed fires', 'Ratio of suppressed fires', 'Fire size suppressed',
 								 'Containment duration', 'Fire out duration')
 plt.titles <- c('MPB affected acres', 'Stand age', 'Tree density', 'Ratio of old trees', sprs.titles)
 #agr.vars <- c('average', 'mean', 'mean', 'mean', 'median', 'median', 'median', 'average', 'mean',
