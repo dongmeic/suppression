@@ -1,11 +1,11 @@
 library(spgwr)
+library(spdep)
 
 ROOT <- '/gpfs/projects/gavingrp/dongmeic/beetle/output/tables'
 data <- read.csv(sprintf('%s/mpb10km_data_wo_FIA_scaled.csv', ROOT))
 xy <- read.csv(sprintf('%s/mpb10km_data_wo_FIA_xy.csv', ROOT))
 
 ptm <- proc.time()
-vars <- c()
 GWRbandwidth <- gwr.sel(beetleAcres ~ lon + lat + etopo1 + mStdAge + density + 
     mfri + prs + GAP1 + GAP3 + vpd + cwd + summerP0 + Tmean + mi + Tvar + wd + AugTmean + 
     OctTmin + AugTmax + Acs + MarMin + ddAugJun + ddAugJul + PPT + summerP2 + TMarAug + 
@@ -40,3 +40,11 @@ sink()
 
 results <- as.data.frame(gwr.model$SDF)
 write.csv(results, sprintf('%s/gwr_results_wo_FIA_scaled.csv', ROOT), row.names=FALSE)
+
+mpb10km.gal.nb <- read.gal('/gpfs/projects/gavingrp/dongmeic/beetle/nb/mpb10km_fishnet_selected.gal')
+mpb10km.gal.w <- nb2listw(mpb10km.gal.nb, zero.policy=TRUE)
+sink(sprintf('%s/gwr_morantest.txt', ROOT))
+gwr.morantest(gwr.model, mpb10km.gal.w, zero.policy = TRUE)
+sink()
+
+print("all done!")

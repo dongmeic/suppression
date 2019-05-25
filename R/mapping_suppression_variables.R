@@ -1,6 +1,7 @@
 library(rasterVis)
 library(colorRamps)
 library(BAMMtools)
+library(RColorBrewer)
 
 source("/gpfs/projects/gavingrp/dongmeic/suppression/R/data_summary_functions.R")
 csvpath <- "/gpfs/projects/gavingrp/dongmeic/beetle/output/tables/"
